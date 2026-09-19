@@ -41,6 +41,38 @@ export interface Hypothesis2Stat {
   restN: number | null;
 }
 
+export interface BacktestPerfStats {
+  total_return: number;
+  cagr: number;
+  max_drawdown: number;
+  annualized_vol: number;
+  sharpe_like: number;
+}
+
+export interface BacktestTrade {
+  date: string;
+  action: "BUY" | "SELL";
+  fg: number;
+  price: number;
+}
+
+export interface BacktestEquityPoint {
+  date: string;
+  strategy: number | null;
+  benchmark: number | null;
+  inStock: boolean;
+}
+
+export interface BacktestData {
+  params: { buyThreshold: number; sellThreshold: number; cashInterest: number };
+  strategy: BacktestPerfStats;
+  benchmark: BacktestPerfStats;
+  pctDaysInMarket: number;
+  numTrades: number;
+  trades: BacktestTrade[];
+  equityCurve: BacktestEquityPoint[];
+}
+
 export interface DashboardData {
   meta: {
     generatedAt: string;
@@ -54,4 +86,5 @@ export interface DashboardData {
   correlation: Record<HorizonKey, number | null>;
   hypothesis1: Record<HorizonKey, Hypothesis1Stat>;
   hypothesis2: Record<HorizonKey, Hypothesis2Stat>;
+  backtest: BacktestData;
 }

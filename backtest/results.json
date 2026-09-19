@@ -1,0 +1,102 @@
+{
+  "params": {
+    "buy_threshold": 20.0,
+    "sell_threshold": 70.0,
+    "initial_capital": 100.0,
+    "cash_interest": 0.0,
+    "date_range": {
+      "start": "2020-07-16",
+      "end": "2026-09-18"
+    }
+  },
+  "strategy": {
+    "total_return": 0.3882,
+    "cagr": 0.0546,
+    "max_drawdown": -0.2277,
+    "annualized_vol": 0.1333,
+    "sharpe_like": 0.467
+  },
+  "benchmark_buy_and_hold": {
+    "total_return": 1.3792,
+    "cagr": 0.1507,
+    "max_drawdown": -0.2543,
+    "annualized_vol": 0.1657,
+    "sharpe_like": 0.933
+  },
+  "pct_days_in_market": 0.4139,
+  "num_trades": 12,
+  "trades": [
+    {
+      "date": "2020-09-03",
+      "action": "BUY",
+      "fg": 2.6,
+      "price": 3455.06
+    },
+    {
+      "date": "2021-02-08",
+      "action": "SELL",
+      "fg": 72.87,
+      "price": 3915.59
+    },
+    {
+      "date": "2021-07-19",
+      "action": "BUY",
+      "fg": 8.98,
+      "price": 4258.49
+    },
+    {
+      "date": "2021-11-03",
+      "action": "SELL",
+      "fg": 72.2,
+      "price": 4660.57
+    },
+    {
+      "date": "2022-01-26",
+      "action": "BUY",
+      "fg": 19.51,
+      "price": 4349.93
+    },
+    {
+      "date": "2022-11-30",
+      "action": "SELL",
+      "fg": 73.97,
+      "price": 4080.11
+    },
+    {
+      "date": "2024-08-06",
+      "action": "BUY",
+      "fg": 19.01,
+      "price": 5240.03
+    },
+    {
+      "date": "2024-09-26",
+      "action": "SELL",
+      "fg": 70.74,
+      "price": 5745.37
+    },
+    {
+      "date": "2024-12-19",
+      "action": "BUY",
+      "fg": 19.51,
+      "price": 5867.08
+    },
+    {
+      "date": "2025-05-14",
+      "action": "SELL",
+      "fg": 70.4,
+      "price": 5892.58
+    },
+    {
+      "date": "2025-11-17",
+      "action": "BUY",
+      "fg": 11.64,
+      "price": 6672.41
+    },
+    {
+      "date": "2026-05-01",
+      "action": "SELL",
+      "fg": 71.17,
+      "price": 7230.12
+    }
+  ]
+}

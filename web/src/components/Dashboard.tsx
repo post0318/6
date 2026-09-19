@@ -5,8 +5,9 @@ import { FearGreedChart, Sp500Chart } from "@/components/charts/TimeSeriesCharts
 import { BucketSummaryCharts } from "@/components/charts/BucketSummaryCharts";
 import { CorrelationChart } from "@/components/charts/CorrelationChart";
 import { Hypothesis1Chart, Hypothesis2Chart } from "@/components/charts/HypothesisCharts";
+import { BacktestChart } from "@/components/charts/BacktestChart";
 
-const REPO_URL = "https://github.com/post0318/project-6-fear-greed";
+const REPO_URL = "https://github.com/post0318/6";
 
 export function Dashboard({ data }: { data: DashboardData }) {
   return (
@@ -73,6 +74,18 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </div>
       </section>
 
+      <section className="mb-12">
+        <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">
+          백테스트: FG 임계값 전략 vs Buy&amp;Hold
+        </h2>
+        <p className="mb-3 text-xs text-[#898781]">
+          &quot;공포지수 20 이하 전량매수, 70 이상 전량매도&quot;를 실제로 반복했다면 동일기간
+          지수 대비 어땠을지 시뮬레이션. 이 표본 기간은 강한 상승장이 대부분이라, 시장에 계속
+          머무르는 Buy&amp;Hold에 유리하게 작용했을 수 있습니다.
+        </p>
+        <BacktestChart backtest={data.backtest} />
+      </section>
+
       <footer className="border-t border-black/10 pt-6 text-xs text-[#898781]">
         <p className="mb-1">
           데이터 출처: CNN Fear &amp; Greed Index(비공식 graphdata 엔드포인트), Yahoo Finance
@@ -80,7 +93,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </p>
         <p className="mb-1">
           다음 단계: overlapping window 문제를 다루는 정식 회귀분석(Newey-West/HAC), 표본 기간
-          확장, 백테스트 시뮬레이터.
+          확장, 백테스트 파라미터(임계값) 민감도 분석.
         </p>
         <a href={REPO_URL} className="underline hover:text-[#2a78d6]" target="_blank" rel="noreferrer">
           {REPO_URL}

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -15,6 +16,15 @@ import pandas as pd
 from explore import FORWARD_WINDOWS, load_merged
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "backtest"))
+from strategy_fg_threshold import (  # noqa: E402
+    BUY_THRESHOLD,
+    SELL_THRESHOLD,
+    load_data as load_backtest_data,
+    perf_stats,
+    run_strategy,
+)
+
 OUT_PATH = ROOT / "web" / "public" / "data" / "dashboard.json"
 
 RATING_ORDER = ["extreme fear", "fear", "neutral", "greed", "extreme greed"]
@@ -108,6 +118,36 @@ def build_hypothesis2(df: pd.DataFrame, min_days: int = 10) -> dict:
     return out
 
 
+def build_backtest() -> dict:
+    bt_df, trades = run_strategy(load_backtest_data())
+    strat_stats = perf_stats(bt_df["strategy_equity"], bt_df["date"])
+    bench_stats = perf_stats(bt_df["benchmark_equity"], bt_df["date"])
+
+    curve = [
+        {
+            "date": row["date"].strftime("%Y-%m-%d"),
+            "strategy": clean(row["strategy_equity"]),
+            "benchmark": clean(row["benchmark_equity"]),
+            "inStock": bool(row["strategy_in_stock"]),
+        }
+        for _, row in bt_df.iterrows()
+    ]
+
+    return {
+        "params": {
+            "buyThreshold": BUY_THRESHOLD,
+            "sellThreshold": SELL_THRESHOLD,
+            "cashInterest": 0.0,
+        },
+        "strategy": strat_stats,
+        "benchmark": bench_stats,
+        "pctDaysInMarket": clean(bt_df["strategy_in_stock"].mean()),
+        "numTrades": len(trades),
+        "trades": trades,
+        "equityCurve": curve,
+    }
+
+
 def main() -> None:
     df = load_merged()
 
@@ -132,6 +172,7 @@ def main() -> None:
         "correlation": build_correlation(df),
         "hypothesis1": build_hypothesis1(df),
         "hypothesis2": build_hypothesis2(df),
+        "backtest": build_backtest(),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -142,6 +183,7 @@ def main() -> None:
     print(f"timeseries rows: {len(payload['timeseries'])}")
     print("correlation:", payload["correlation"])
     print("bucketSummary extreme fear 1w:", payload["bucketSummary"]["extreme fear"]["byHorizon"]["1w"])
+    print("backtest strategy vs benchmark:", payload["backtest"]["strategy"], payload["backtest"]["benchmark"])
 
 
 if __name__ == "__main__":
