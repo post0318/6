@@ -191,4 +191,16 @@ export interface DashboardData {
   backtestGradual: GradualBacktestData;
   windowAnalysis: WindowAnalysisData;
   signalCandidates: SignalCandidate[];
+  rollingSeries: {
+    "1y": RollingSeriesPoint[];
+    "2y": RollingSeriesPoint[];
+  };
+}
+
+export interface RollingSeriesPoint {
+  date: string;
+  buyHold: number;
+  A: number;
+  B: number;
+  C: number;
 }

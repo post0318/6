@@ -326,6 +326,33 @@ def build_signal_candidates() -> list[dict]:
     return out
 
 
+def build_rolling_series() -> dict:
+    """롤링 1년/2년 수익률의 전체 시계열(요약 통계가 아니라 매일 값)을 반환한다 —
+    대시보드에서 시간에 따른 롤링 성과 변화를 차트로 보여주기 위함."""
+    fg, price, dates = load_opt_arrays()
+    bench_eq = 100.0 * (price / price[0])
+
+    curves = {"buyHold": bench_eq}
+    for cand in SIGNAL_CANDIDATES:
+        curves[cand["id"]] = simulate_opt(fg, price, **cand["params"])
+
+    def rolling(eq: np.ndarray, n: int) -> np.ndarray:
+        return eq[n:] / eq[:-n] - 1
+
+    out = {}
+    for horizon_label, n in [("1y", 252), ("2y", 504)]:
+        rolled = {name: rolling(eq, n) for name, eq in curves.items()}
+        m = len(rolled["buyHold"])
+        series = []
+        for i in range(m):
+            row = {"date": str(dates.iloc[i + n].date())}
+            for name in curves:
+                row[name] = clean(rolled[name][i])
+            series.append(row)
+        out[horizon_label] = series
+    return out
+
+
 def main() -> None:
     df = load_merged()
 
@@ -354,6 +381,7 @@ def main() -> None:
         "backtestGradual": build_backtest_gradual(),
         "windowAnalysis": build_window_analysis(),
         "signalCandidates": build_signal_candidates(),
+        "rollingSeries": build_rolling_series(),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -369,6 +397,8 @@ def main() -> None:
     print("windowAnalysis summary:", json.dumps(payload["windowAnalysis"]["summary"], indent=2))
     for c in payload["signalCandidates"]:
         print(f"{c['id']}: trades={len(c['trades'])} currentStatus={c['currentStatus']['hint']}")
+    print("rollingSeries 1y points:", len(payload["rollingSeries"]["1y"]), "2y points:", len(payload["rollingSeries"]["2y"]))
+    print("rollingSeries 1y sample:", payload["rollingSeries"]["1y"][-1])
 
 
 if __name__ == "__main__":

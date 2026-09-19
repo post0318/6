@@ -9,6 +9,7 @@ import { BacktestChart } from "@/components/charts/BacktestChart";
 import { GradualStrategyChart } from "@/components/charts/GradualStrategyChart";
 import { WindowEquityChart, WindowSummaryTable } from "@/components/charts/WindowAnalysisChart";
 import { CandidatesEquityChart, CandidatePanel } from "@/components/charts/SignalCandidates";
+import { RollingReturnsChart } from "@/components/charts/RollingReturnsChart";
 
 const REPO_URL = "https://github.com/post0318/6";
 
@@ -134,6 +135,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </p>
         <div className="flex flex-col gap-4">
           <CandidatesEquityChart candidates={data.signalCandidates} buyHold={data.windowAnalysis.equityCurve} />
+          <RollingReturnsChart series={data.rollingSeries["1y"]} horizonLabel="1년" />
+          <RollingReturnsChart series={data.rollingSeries["2y"]} horizonLabel="2년" />
           {data.signalCandidates.map((c) => (
             <CandidatePanel key={c.id} candidate={c} timeseries={data.timeseries} />
           ))}
