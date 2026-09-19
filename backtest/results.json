@@ -5,111 +5,27 @@
     "initial_capital": 100.0,
     "cash_interest": 0.0,
     "date_range": {
-      "start": "2011-01-03",
+      "start": "2016-09-19",
       "end": "2026-09-18"
     }
   },
   "strategy": {
-    "total_return": 2.0466,
-    "cagr": 0.0735,
+    "total_return": 1.0005,
+    "cagr": 0.0718,
     "max_drawdown": -0.3146,
-    "annualized_vol": 0.1618,
-    "sharpe_like": 0.52
+    "annualized_vol": 0.1766,
+    "sharpe_like": 0.482
   },
   "benchmark_buy_and_hold": {
-    "total_return": 8.8541,
-    "cagr": 0.1568,
+    "total_return": 4.0664,
+    "cagr": 0.1762,
     "max_drawdown": -0.364,
-    "annualized_vol": 0.2052,
-    "sharpe_like": 0.815
+    "annualized_vol": 0.2215,
+    "sharpe_like": 0.846
   },
-  "pct_days_in_market": 0.3904,
-  "num_trades": 36,
+  "pct_days_in_market": 0.3745,
+  "num_trades": 22,
   "trades": [
-    {
-      "date": "2011-03-15",
-      "action": "BUY",
-      "fg": 13.0,
-      "price": 2667.33
-    },
-    {
-      "date": "2011-10-27",
-      "action": "SELL",
-      "fg": 71.0,
-      "price": 2738.63
-    },
-    {
-      "date": "2012-05-16",
-      "action": "BUY",
-      "fg": 20.0,
-      "price": 2874.04
-    },
-    {
-      "date": "2012-08-07",
-      "action": "SELL",
-      "fg": 71.0,
-      "price": 3015.86
-    },
-    {
-      "date": "2013-06-21",
-      "action": "BUY",
-      "fg": 19.0,
-      "price": 3357.25
-    },
-    {
-      "date": "2013-11-14",
-      "action": "SELL",
-      "fg": 70.0,
-      "price": 3972.74
-    },
-    {
-      "date": "2014-01-30",
-      "action": "BUY",
-      "fg": 20.0,
-      "price": 4123.13
-    },
-    {
-      "date": "2014-03-06",
-      "action": "SELL",
-      "fg": 78.0,
-      "price": 4352.13
-    },
-    {
-      "date": "2014-08-01",
-      "action": "BUY",
-      "fg": 10.0,
-      "price": 4352.64
-    },
-    {
-      "date": "2015-02-17",
-      "action": "SELL",
-      "fg": 73.0,
-      "price": 4899.27
-    },
-    {
-      "date": "2015-06-30",
-      "action": "BUY",
-      "fg": 8.0,
-      "price": 4986.87
-    },
-    {
-      "date": "2015-10-30",
-      "action": "SELL",
-      "fg": 71.0,
-      "price": 5053.75
-    },
-    {
-      "date": "2016-01-12",
-      "action": "BUY",
-      "fg": 17.0,
-      "price": 4685.92
-    },
-    {
-      "date": "2016-03-08",
-      "action": "SELL",
-      "fg": 71.0,
-      "price": 4648.82
-    },
     {
       "date": "2016-11-03",
       "action": "BUY",

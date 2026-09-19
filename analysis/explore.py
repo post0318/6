@@ -15,6 +15,10 @@ Session 17: 사용자가 제공한 외부 데이터(data/fear_greed_2011_2025_ex
 CUTOVER_DATE 이전 구간(2020-07 오염 구간 포함, 2011까지)은 이 외부 데이터로 대체해
 표본을 대폭 확장한다. CUTOVER_DATE부터는 소수점까지 있는 우리 자체 데이터를 그대로
 쓴다(정밀도가 더 높으므로). 자세한 내용은 notes/session17_extended_history.md 참고.
+
+Session 18: 표본 시작점을 "오늘 기준 과거 10년"으로 고정(2011년까지 다 쓰지 않음 —
+너무 먼 과거라 지금 시장 구조와 관련성이 떨어진다는 판단). 고정 연도가 아니라 상대
+윈도우라 스크립트를 재실행할 때마다 자동으로 최신 10년으로 갱신된다.
 """
 
 from __future__ import annotations
@@ -67,6 +71,9 @@ def load_merged() -> pd.DataFrame:
     idx = pd.read_csv(INDEX_PATH, parse_dates=["date"])
 
     df = pd.merge(fg, idx[["date", "close"]], on="date", how="inner").sort_values("date").reset_index(drop=True)
+    # session 18: 표본은 "오늘 기준 과거 10년"으로 고정(고정 연도 아님 — 스크립트를
+    # 다시 돌리는 시점마다 자동으로 최신 10년 창으로 갱신된다).
+    df = df[df["date"] >= (df["date"].max() - pd.DateOffset(years=10))].reset_index(drop=True)
 
     # 미래 수익률 (forward return)
     for label, n in FORWARD_WINDOWS.items():
