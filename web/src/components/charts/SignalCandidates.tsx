@@ -117,17 +117,20 @@ function SignalTooltip({
   payload,
   label,
   valueLabel,
+  lineKey,
   formatter,
 }: {
   active?: boolean;
-  payload?: { value: number; dataKey: string; payload: { action?: string } }[];
+  payload?: { value: number; dataKey: string; name?: string }[];
   label?: string;
   valueLabel: string;
+  lineKey: string;
   formatter: (v: number) => string;
 }) {
   if (!active || !payload || payload.length === 0) return null;
-  const linePoint = payload.find((p) => p.dataKey === "value" && p.payload?.action === undefined);
-  const markerPoint = payload.find((p) => p.payload?.action !== undefined);
+  const linePoint = payload.find((p) => p.dataKey === lineKey);
+  const buyPoint = payload.find((p) => p.name === "buy" && p.value != null);
+  const sellPoint = payload.find((p) => p.name === "sell" && p.value != null);
   return (
     <div className="rounded-md border border-black/10 bg-white px-3 py-2 text-xs shadow-sm">
       <div className="text-[#898781]">{label}</div>
@@ -136,11 +139,8 @@ function SignalTooltip({
           {valueLabel}: {formatter(linePoint.value)}
         </div>
       )}
-      {markerPoint && (
-        <div className="font-medium" style={{ color: markerPoint.payload.action === "SELL_ALL" ? CATEGORICAL.orange : CATEGORICAL.blue }}>
-          {markerPoint.payload.action === "SELL_ALL" ? "매도" : "매수"} 신호
-        </div>
-      )}
+      {buyPoint && <div className="font-medium" style={{ color: CATEGORICAL.blue }}>매수 신호</div>}
+      {sellPoint && <div className="font-medium" style={{ color: CATEGORICAL.orange }}>매도 신호</div>}
     </div>
   );
 }
@@ -153,7 +153,10 @@ function tsTickFormatter(dates: string[]) {
   };
 }
 
-/** 나스닥 종가/FG 지수 위에 매수(파랑)·매도(주황) 신호를 겹쳐 그린 두 개의 단일축 차트. */
+/** 나스닥 종가/FG 지수 위에 매수(파랑)·매도(주황) 신호를 겹쳐 그린 두 개의 단일축 차트.
+ * 신호 마커는 반드시 라인과 "같은" data 배열의 컬럼으로 넣어야 카테고리 축 위치가
+ * 라인과 정확히 일치한다 (Scatter에 별도의 짧은 배열을 주면 인덱스가 어긋나 점이
+ * 라인 위/아래로 벗어나 보인다). */
 export function SignalOverlayCharts({
   candidateId,
   timeseries,
@@ -164,21 +167,31 @@ export function SignalOverlayCharts({
   trades: SignalTrade[];
 }) {
   const dates = timeseries.map((d) => d.date);
-  const buyPoints = trades.filter((t) => t.action !== "SELL_ALL");
-  const sellPoints = trades.filter((t) => t.action === "SELL_ALL");
   const syncId = `signal-overlay-${candidateId}`;
 
-  const buyNasdaq = buyPoints.map((t) => ({ date: t.date, value: t.price, action: t.action }));
-  const sellNasdaq = sellPoints.map((t) => ({ date: t.date, value: t.price, action: t.action }));
-  const buyFg = buyPoints.map((t) => ({ date: t.date, value: t.fg, action: t.action }));
-  const sellFg = sellPoints.map((t) => ({ date: t.date, value: t.fg, action: t.action }));
+  const buyByDate = new Map(trades.filter((t) => t.action !== "SELL_ALL").map((t) => [t.date, t]));
+  const sellByDate = new Map(trades.filter((t) => t.action === "SELL_ALL").map((t) => [t.date, t]));
+
+  const chartData = timeseries.map((row) => {
+    const buy = buyByDate.get(row.date);
+    const sell = sellByDate.get(row.date);
+    return {
+      date: row.date,
+      nasdaq: row.nasdaq,
+      fg: row.fg,
+      buyNasdaq: buy ? buy.price : null,
+      sellNasdaq: sell ? sell.price : null,
+      buyFg: buy ? buy.fg : null,
+      sellFg: sell ? sell.fg : null,
+    };
+  });
 
   return (
     <div className="mb-3 flex flex-col gap-3">
       <div className="rounded-md border border-black/10 p-3" style={{ background: CHART_SURFACE }}>
         <h5 className="mb-2 text-xs font-medium text-[#0b0b0b]">나스닥 종가 + 매매 신호</h5>
         <ResponsiveContainer width="100%" height={160}>
-          <ComposedChart data={timeseries} syncId={syncId} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
+          <ComposedChart data={chartData} syncId={syncId} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
             <CartesianGrid stroke={GRIDLINE} vertical={false} />
             <XAxis
               dataKey="date"
@@ -189,10 +202,12 @@ export function SignalOverlayCharts({
               tickLine={false}
             />
             <YAxis tick={{ fontSize: 10, fill: INK_MUTED }} axisLine={false} tickLine={false} width={52} domain={["auto", "auto"]} />
-            <Tooltip content={<SignalTooltip valueLabel="나스닥" formatter={(v) => v.toLocaleString(undefined, { maximumFractionDigits: 0 })} />} />
+            <Tooltip
+              content={<SignalTooltip valueLabel="나스닥" lineKey="nasdaq" formatter={(v) => v.toLocaleString(undefined, { maximumFractionDigits: 0 })} />}
+            />
             <Line type="monotone" dataKey="nasdaq" stroke={INK_MUTED} strokeWidth={1.25} dot={false} isAnimationActive={false} />
-            <Scatter data={buyNasdaq} dataKey="value" fill={CATEGORICAL.blue} shape="circle" isAnimationActive={false} />
-            <Scatter data={sellNasdaq} dataKey="value" fill={CATEGORICAL.orange} shape="circle" isAnimationActive={false} />
+            <Scatter dataKey="buyNasdaq" name="buy" fill={CATEGORICAL.blue} shape="circle" isAnimationActive={false} />
+            <Scatter dataKey="sellNasdaq" name="sell" fill={CATEGORICAL.orange} shape="circle" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -204,7 +219,7 @@ export function SignalOverlayCharts({
           </span>
         </h5>
         <ResponsiveContainer width="100%" height={160}>
-          <ComposedChart data={timeseries} syncId={syncId} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
+          <ComposedChart data={chartData} syncId={syncId} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
             <CartesianGrid stroke={GRIDLINE} vertical={false} />
             <ReferenceArea y1={0} y2={25} fill={EXTREME_FEAR_BAND} strokeOpacity={0} />
             <ReferenceArea y1={75} y2={100} fill={EXTREME_GREED_BAND} strokeOpacity={0} />
@@ -217,10 +232,10 @@ export function SignalOverlayCharts({
               tickLine={false}
             />
             <YAxis tick={{ fontSize: 10, fill: INK_MUTED }} axisLine={false} tickLine={false} width={52} domain={[0, 100]} />
-            <Tooltip content={<SignalTooltip valueLabel="Fear & Greed" formatter={(v) => v.toFixed(1)} />} />
+            <Tooltip content={<SignalTooltip valueLabel="Fear & Greed" lineKey="fg" formatter={(v) => v.toFixed(1)} />} />
             <Line type="monotone" dataKey="fg" stroke={INK_MUTED} strokeWidth={1.25} dot={false} isAnimationActive={false} />
-            <Scatter data={buyFg} dataKey="value" fill={CATEGORICAL.blue} shape="circle" isAnimationActive={false} />
-            <Scatter data={sellFg} dataKey="value" fill={CATEGORICAL.orange} shape="circle" isAnimationActive={false} />
+            <Scatter dataKey="buyFg" name="buy" fill={CATEGORICAL.blue} shape="circle" isAnimationActive={false} />
+            <Scatter dataKey="sellFg" name="sell" fill={CATEGORICAL.orange} shape="circle" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
