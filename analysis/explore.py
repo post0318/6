@@ -71,9 +71,9 @@ def load_merged() -> pd.DataFrame:
     idx = pd.read_csv(INDEX_PATH, parse_dates=["date"])
 
     df = pd.merge(fg, idx[["date", "close"]], on="date", how="inner").sort_values("date").reset_index(drop=True)
-    # session 18: 표본은 "오늘 기준 과거 10년"으로 고정(고정 연도 아님 — 스크립트를
-    # 다시 돌리는 시점마다 자동으로 최신 10년 창으로 갱신된다).
-    df = df[df["date"] >= (df["date"].max() - pd.DateOffset(years=10))].reset_index(drop=True)
+    # session 19: 표본을 "오늘 기준 과거 5년"으로 축소(session 18의 10년에서 조정).
+    # 고정 연도 아님 — 스크립트를 다시 돌리는 시점마다 자동으로 최신 5년 창으로 갱신.
+    df = df[df["date"] >= (df["date"].max() - pd.DateOffset(years=5))].reset_index(drop=True)
 
     # 미래 수익률 (forward return)
     for label, n in FORWARD_WINDOWS.items():
