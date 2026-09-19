@@ -8,13 +8,31 @@ export const INK_MUTED = "#898781";
 export const GRIDLINE = "#e1e0d9";
 export const BASELINE = "#c3c2b7";
 
-// 카테고리 팔레트 (고정 순서, 슬롯 1=blue, 2=orange, 3=aqua, 4=yellow)
+// 카테고리 팔레트, palette.md 8슬롯 고정 순서 그대로:
+// 1=blue 2=orange 3=aqua 4=yellow 5=magenta 6=green 7=violet 8=red
 export const CATEGORICAL = {
   blue: "#2a78d6",
   orange: "#eb6834",
   aqua: "#1baf7a",
   yellow: "#eda100",
+  magenta: "#e87ba4",
+  green: "#008300",
+  violet: "#4a3aa7",
+  red: "#e34948",
 };
+
+// 후보 비교 차트처럼 임의 개수의 계열을 순서대로 색칠할 때 쓰는 고정 순서 배열
+// (팔레트 슬롯 순서 = CVD 안전성의 핵심이므로 임의로 재배열하지 않는다)
+export const CATEGORICAL_ORDER = [
+  CATEGORICAL.blue,
+  CATEGORICAL.orange,
+  CATEGORICAL.aqua,
+  CATEGORICAL.yellow,
+  CATEGORICAL.magenta,
+  CATEGORICAL.green,
+  CATEGORICAL.violet,
+  CATEGORICAL.red,
+];
 
 // 발산형(diverging) 쌍: blue <-> red, 중립 회색 중간값
 export const DIVERGING = {

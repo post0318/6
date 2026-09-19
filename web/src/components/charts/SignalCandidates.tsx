@@ -25,10 +25,15 @@ import {
   INK_SECONDARY,
 } from "@/lib/palette";
 
+// Buy&Hold가 orange를 쓰므로, 후보들은 나머지 팔레트 슬롯을 고정 순서대로 배정
 const CANDIDATE_COLORS: Record<string, string> = {
   A: CATEGORICAL.blue,
   B: CATEGORICAL.aqua,
   C: CATEGORICAL.yellow,
+  D: CATEGORICAL.magenta,
+  E: CATEGORICAL.green,
+  F: CATEGORICAL.violet,
+  G: CATEGORICAL.red,
 };
 
 const ACTION_KO: Record<SignalTrade["action"], string> = {
@@ -75,7 +80,10 @@ export function CandidatesEquityChart({
   return (
     <div className="rounded-lg border border-black/10 p-4" style={{ background: CHART_SURFACE }}>
       <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">후보 A/B/C 자산가치 비교 (시작값 100 기준)</h4>
-      <p className="mb-3 text-xs text-[#898781]">세 후보의 성과 차이는 매우 작습니다 — B와 C는 거의 겹쳐 보입니다.</p>
+      <p className="mb-3 text-xs text-[#898781]">
+        일곱 후보의 성과 차이는 매우 작습니다 — B/C/D/F(모두 40%/10% 계열)는 거의 겹쳐
+        보입니다.
+      </p>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
           <CartesianGrid stroke={GRIDLINE} vertical={false} />

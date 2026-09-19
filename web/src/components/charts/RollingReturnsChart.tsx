@@ -19,6 +19,10 @@ const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; colo
   { key: "A", label: "후보 A", color: CATEGORICAL.blue },
   { key: "B", label: "후보 B", color: CATEGORICAL.aqua },
   { key: "C", label: "후보 C", color: CATEGORICAL.yellow },
+  { key: "D", label: "후보 D", color: CATEGORICAL.magenta },
+  { key: "E", label: "후보 E", color: CATEGORICAL.green },
+  { key: "F", label: "후보 F", color: CATEGORICAL.violet },
+  { key: "G", label: "후보 G", color: CATEGORICAL.red },
 ];
 
 function tickFormatter(dates: string[]) {
