@@ -6,6 +6,7 @@ import { BucketSummaryCharts } from "@/components/charts/BucketSummaryCharts";
 import { CorrelationChart } from "@/components/charts/CorrelationChart";
 import { Hypothesis1Chart, Hypothesis2Chart } from "@/components/charts/HypothesisCharts";
 import { BacktestChart } from "@/components/charts/BacktestChart";
+import { GradualStrategyChart } from "@/components/charts/GradualStrategyChart";
 
 const REPO_URL = "https://github.com/post0318/6";
 
@@ -76,14 +77,27 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
       <section className="mb-12">
         <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">
-          백테스트: FG 임계값 전략 vs Buy&amp;Hold
+          백테스트 ①: FG 임계값 전략 vs Buy&amp;Hold
         </h2>
         <p className="mb-3 text-xs text-[#898781]">
           &quot;공포지수 20 이하 전량매수, 70 이상 전량매도&quot;를 실제로 반복했다면 동일기간
           지수 대비 어땠을지 시뮬레이션. 이 표본 기간은 강한 상승장이 대부분이라, 시장에 계속
           머무르는 Buy&amp;Hold에 유리하게 작용했을 수 있습니다.
         </p>
-        <BacktestChart backtest={data.backtest} />
+        <BacktestChart backtest={data.backtestThreshold} />
+      </section>
+
+      <section className="mb-12">
+        <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">
+          백테스트 ②: 30% 초기편입 + 계단식 매수 전략 vs Buy&amp;Hold
+        </h2>
+        <p className="mb-3 text-xs text-[#898781]">
+          시작일에 지수와 무관하게 30%를 편입하고, FG가 65 밑으로 내려가면 매수 진행 모드가
+          켜져 매주 수요일 5%p씩 비중을 늘립니다(65를 다시 넘어도 계속). FG가 75를 넘으면
+          전량매도 후 재트리거(65 하회)를 기다리고, 매수 진행 중 FG가 25 밑으로 가면 즉시
+          전량매수로 전환합니다.
+        </p>
+        <GradualStrategyChart backtest={data.backtestGradual} />
       </section>
 
       <footer className="border-t border-black/10 pt-6 text-xs text-[#898781]">

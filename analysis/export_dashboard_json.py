@@ -24,6 +24,7 @@ from strategy_fg_threshold import (  # noqa: E402
     perf_stats,
     run_strategy,
 )
+import strategy_fg_gradual  # noqa: E402
 
 OUT_PATH = ROOT / "web" / "public" / "data" / "dashboard.json"
 
@@ -148,6 +149,45 @@ def build_backtest() -> dict:
     }
 
 
+def build_backtest_gradual() -> dict:
+    bt_df, trades = strategy_fg_gradual.run_strategy(strategy_fg_gradual.load_data())
+    strat_stats = perf_stats(bt_df["strategy_equity"], bt_df["date"])
+    bench_stats = perf_stats(bt_df["benchmark_equity"], bt_df["date"])
+
+    curve = [
+        {
+            "date": row["date"].strftime("%Y-%m-%d"),
+            "strategy": clean(row["strategy_equity"]),
+            "benchmark": clean(row["benchmark_equity"]),
+            "weight": clean(row["strategy_weight"]),
+            "buyingActive": bool(row["buying_active"]),
+        }
+        for _, row in bt_df.iterrows()
+    ]
+
+    trade_counts: dict[str, int] = {}
+    for t in trades:
+        trade_counts[t["action"]] = trade_counts.get(t["action"], 0) + 1
+
+    return {
+        "params": {
+            "initialAllocation": strategy_fg_gradual.INITIAL_ALLOCATION,
+            "buyTrigger": strategy_fg_gradual.BUY_TRIGGER,
+            "sellThreshold": strategy_fg_gradual.SELL_THRESHOLD,
+            "crashFullBuy": strategy_fg_gradual.CRASH_FULL_BUY,
+            "weeklyStep": strategy_fg_gradual.WEEKLY_STEP,
+            "cashInterest": 0.0,
+        },
+        "strategy": strat_stats,
+        "benchmark": bench_stats,
+        "finalWeight": clean(bt_df["strategy_weight"].iloc[-1]),
+        "numTrades": len(trades),
+        "tradeCounts": trade_counts,
+        "trades": trades,
+        "equityCurve": curve,
+    }
+
+
 def main() -> None:
     df = load_merged()
 
@@ -172,7 +212,8 @@ def main() -> None:
         "correlation": build_correlation(df),
         "hypothesis1": build_hypothesis1(df),
         "hypothesis2": build_hypothesis2(df),
-        "backtest": build_backtest(),
+        "backtestThreshold": build_backtest(),
+        "backtestGradual": build_backtest_gradual(),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -183,7 +224,8 @@ def main() -> None:
     print(f"timeseries rows: {len(payload['timeseries'])}")
     print("correlation:", payload["correlation"])
     print("bucketSummary extreme fear 1w:", payload["bucketSummary"]["extreme fear"]["byHorizon"]["1w"])
-    print("backtest strategy vs benchmark:", payload["backtest"]["strategy"], payload["backtest"]["benchmark"])
+    print("backtestThreshold strategy vs benchmark:", payload["backtestThreshold"]["strategy"], payload["backtestThreshold"]["benchmark"])
+    print("backtestGradual strategy vs benchmark:", payload["backtestGradual"]["strategy"], payload["backtestGradual"]["benchmark"])
 
 
 if __name__ == "__main__":

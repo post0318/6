@@ -73,6 +73,31 @@ export interface BacktestData {
   equityCurve: BacktestEquityPoint[];
 }
 
+export interface GradualEquityPoint {
+  date: string;
+  strategy: number | null;
+  benchmark: number | null;
+  weight: number | null;
+  buyingActive: boolean;
+}
+
+export interface GradualBacktestData {
+  params: {
+    initialAllocation: number;
+    buyTrigger: number;
+    sellThreshold: number;
+    crashFullBuy: number;
+    weeklyStep: number;
+    cashInterest: number;
+  };
+  strategy: BacktestPerfStats;
+  benchmark: BacktestPerfStats;
+  finalWeight: number;
+  numTrades: number;
+  tradeCounts: Record<string, number>;
+  equityCurve: GradualEquityPoint[];
+}
+
 export interface DashboardData {
   meta: {
     generatedAt: string;
@@ -86,5 +111,6 @@ export interface DashboardData {
   correlation: Record<HorizonKey, number | null>;
   hypothesis1: Record<HorizonKey, Hypothesis1Stat>;
   hypothesis2: Record<HorizonKey, Hypothesis2Stat>;
-  backtest: BacktestData;
+  backtestThreshold: BacktestData;
+  backtestGradual: GradualBacktestData;
 }
