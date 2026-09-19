@@ -130,6 +130,50 @@ export interface WindowAnalysisData {
   equityCurve: WindowEquityPoint[];
 }
 
+export interface SignalTrade {
+  date: string;
+  action: "RAMP_BUY" | "WEEKLY_BUY" | "CRASH_FULL_BUY" | "SELL_ALL";
+  fg: number;
+  price: number;
+  pctOfPortfolio: number | null;
+  resultingWeight: number;
+}
+
+export interface RollingSummary {
+  mean: number;
+  median: number;
+  worst: number;
+  best: number;
+  pctNegative: number;
+  winRateVsBenchmark: number;
+}
+
+export interface SignalCandidate {
+  id: string;
+  label: string;
+  params: {
+    initial_allocation: number;
+    ramp_days: number;
+    buy_interval_days: number;
+    buy_step: number;
+    resell_level: number;
+    crash_level: number;
+  };
+  currentStatus: {
+    currentWeight: number;
+    buyingActive: boolean;
+    lastTrade: SignalTrade | null;
+    hint: string;
+  };
+  summary: {
+    original: BacktestPerfStats;
+    rolling1y: RollingSummary;
+    rolling2y: RollingSummary;
+  };
+  trades: SignalTrade[];
+  equityCurve: { date: string; equity: number }[];
+}
+
 export interface DashboardData {
   meta: {
     generatedAt: string;
@@ -146,4 +190,5 @@ export interface DashboardData {
   backtestThreshold: BacktestData;
   backtestGradual: GradualBacktestData;
   windowAnalysis: WindowAnalysisData;
+  signalCandidates: SignalCandidate[];
 }

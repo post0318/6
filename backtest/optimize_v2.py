@@ -114,6 +114,96 @@ def simulate(
     return equity
 
 
+def simulate_with_trades(
+    fg: np.ndarray,
+    price: np.ndarray,
+    dates: pd.Series,
+    initial_allocation: float,
+    ramp_days: int,
+    buy_interval_days: int,
+    buy_step: float,
+    resell_level: float,
+    crash_level: float,
+):
+    """simulate()와 완전히 동일한 로직이지만, 매매 신호(trades)와 비중/매수모드 배열도
+    함께 기록한다 — 대시보드의 "실전 매매 시그널" 표시용."""
+    n = len(fg)
+    cash = INITIAL_CAPITAL
+    shares = 0.0
+    buying_active = False
+    days_since = 0
+    ramp_daily = initial_allocation / ramp_days
+    equity = np.empty(n)
+    weight = np.empty(n)
+    buying_active_arr = np.empty(n, dtype=bool)
+    trades: list[dict] = []
+
+    def record(i: int, action: str, pct: float | None = None) -> None:
+        total_now = cash + shares * price[i]
+        resulting_weight = (shares * price[i]) / total_now if total_now > 0 else 0.0
+        trades.append({
+            "date": str(dates.iloc[i].date()),
+            "action": action,
+            "fg": round(float(fg[i]), 2),
+            "price": round(float(price[i]), 2),
+            "pctOfPortfolio": round(float(pct), 4) if pct is not None else None,
+            "resultingWeight": round(float(resulting_weight), 4),
+        })
+
+    for i in range(n):
+        f = fg[i]
+        p = price[i]
+        total = cash + shares * p
+
+        if i < ramp_days:
+            bv = min(cash, ramp_daily * total)
+            if bv > 0:
+                shares += bv / p
+                cash -= bv
+                record(i, "RAMP_BUY", bv / total if total > 0 else None)
+        else:
+            cw = (shares * p) / total if total > 0 else 0.0
+            if cw > 1e-9 and f >= resell_level:
+                cash += shares * p
+                shares = 0.0
+                buying_active = False
+                days_since = 0
+                record(i, "SELL_ALL")
+            else:
+                was_active = buying_active
+                if f < resell_level:
+                    buying_active = True
+                if buying_active and not was_active:
+                    days_since = 0
+
+                total = cash + shares * p
+                cw = (shares * p) / total if total > 0 else 0.0
+
+                if buying_active and f < crash_level and cw < 1.0 - 1e-9:
+                    bv = cash
+                    shares += bv / p
+                    cash -= bv
+                    days_since = 0
+                    record(i, "CRASH_FULL_BUY", 1.0 - cw)
+                else:
+                    days_since += 1
+                    if buying_active and days_since >= buy_interval_days and cw < 1.0 - 1e-9:
+                        total = cash + shares * p
+                        bv = min(cash, buy_step * total)
+                        if bv > 0:
+                            shares += bv / p
+                            cash -= bv
+                            record(i, "WEEKLY_BUY", bv / total)
+                        days_since = 0
+
+        total = cash + shares * p
+        equity[i] = total
+        weight[i] = (shares * p) / total if total > 0 else 0.0
+        buying_active_arr[i] = buying_active
+
+    return equity, weight, buying_active_arr, trades
+
+
 def perf_from_equity(equity: np.ndarray, dates: pd.Series) -> dict:
     total_return = equity[-1] / equity[0] - 1
     years = (dates.iloc[-1] - dates.iloc[0]).days / 365.25

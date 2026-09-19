@@ -25,7 +25,12 @@ from strategy_fg_threshold import (  # noqa: E402
     run_strategy,
 )
 import strategy_fg_gradual  # noqa: E402
-from optimize_v2 import load_arrays as load_opt_arrays, perf_from_equity, simulate as simulate_opt  # noqa: E402
+from optimize_v2 import (  # noqa: E402
+    load_arrays as load_opt_arrays,
+    perf_from_equity,
+    simulate as simulate_opt,
+    simulate_with_trades,
+)
 
 OUT_PATH = ROOT / "web" / "public" / "data" / "dashboard.json"
 
@@ -243,6 +248,84 @@ def build_window_analysis() -> dict:
     }
 
 
+SIGNAL_CANDIDATES = [
+    {
+        "id": "A",
+        "label": "A: v2-optimal (초기 50% / 추가매수 20%, 21일)",
+        "params": dict(initial_allocation=0.50, ramp_days=1, buy_interval_days=21, buy_step=0.20, resell_level=65, crash_level=30),
+    },
+    {
+        "id": "B",
+        "label": "B: 40%/10% 최고 (분할 없음, 21일)",
+        "params": dict(initial_allocation=0.40, ramp_days=1, buy_interval_days=21, buy_step=0.10, resell_level=65, crash_level=30),
+    },
+    {
+        "id": "C",
+        "label": "C: 40%/10% 분할 최고 (2일 램프, 21일)",
+        "params": dict(initial_allocation=0.40, ramp_days=2, buy_interval_days=21, buy_step=0.10, resell_level=65, crash_level=30),
+    },
+]
+
+
+def rolling_summary(equity: np.ndarray, bench_equity: np.ndarray, n: int) -> dict:
+    r = equity[n:] / equity[:-n] - 1
+    rb = bench_equity[n:] / bench_equity[:-n] - 1
+    return {
+        "mean": clean(r.mean()),
+        "median": clean(float(np.median(r))),
+        "worst": clean(r.min()),
+        "best": clean(r.max()),
+        "pctNegative": clean((r < 0).mean()),
+        "winRateVsBenchmark": clean((r > rb).mean()),
+    }
+
+
+def current_status(weight: float, buying_active: bool, trades: list[dict], params: dict) -> dict:
+    last_trade = trades[-1] if trades else None
+    if buying_active and weight >= 1.0 - 1e-6:
+        hint = f"완전 편입(100%) 상태 — FG가 {params['resell_level']} 이상이면 전량매도"
+    elif buying_active:
+        hint = (
+            f"매수 진행 중(현재 비중 {weight*100:.0f}%) — 다음 정기매수까지 대기, "
+            f"FG≥{params['resell_level']}이면 즉시 매도, FG<{params['crash_level']}이면 즉시 전량매수"
+        )
+    else:
+        hint = f"현금 보유 중 — FG가 {params['resell_level']} 밑으로 내려가면 매수 재개"
+    return {
+        "currentWeight": clean(weight),
+        "buyingActive": bool(buying_active),
+        "lastTrade": last_trade,
+        "hint": hint,
+    }
+
+
+def build_signal_candidates() -> list[dict]:
+    fg, price, dates = load_opt_arrays()
+    bench_eq = 100.0 * (price / price[0])
+
+    out = []
+    for cand in SIGNAL_CANDIDATES:
+        eq, weight, active, trades = simulate_with_trades(fg, price, dates, **cand["params"])
+        stats = perf_from_equity(eq, dates)
+        out.append({
+            "id": cand["id"],
+            "label": cand["label"],
+            "params": cand["params"],
+            "currentStatus": current_status(float(weight[-1]), bool(active[-1]), trades, cand["params"]),
+            "summary": {
+                "original": {k: clean(v) for k, v in stats.items()},
+                "rolling1y": rolling_summary(eq, bench_eq, 252),
+                "rolling2y": rolling_summary(eq, bench_eq, 504),
+            },
+            "trades": trades,
+            "equityCurve": [
+                {"date": str(dates.iloc[i].date()), "equity": clean(eq[i])}
+                for i in range(len(fg))
+            ],
+        })
+    return out
+
+
 def main() -> None:
     df = load_merged()
 
@@ -270,6 +353,7 @@ def main() -> None:
         "backtestThreshold": build_backtest(),
         "backtestGradual": build_backtest_gradual(),
         "windowAnalysis": build_window_analysis(),
+        "signalCandidates": build_signal_candidates(),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -283,6 +367,8 @@ def main() -> None:
     print("backtestThreshold strategy vs benchmark:", payload["backtestThreshold"]["strategy"], payload["backtestThreshold"]["benchmark"])
     print("backtestGradual strategy vs benchmark:", payload["backtestGradual"]["strategy"], payload["backtestGradual"]["benchmark"])
     print("windowAnalysis summary:", json.dumps(payload["windowAnalysis"]["summary"], indent=2))
+    for c in payload["signalCandidates"]:
+        print(f"{c['id']}: trades={len(c['trades'])} currentStatus={c['currentStatus']['hint']}")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import { Hypothesis1Chart, Hypothesis2Chart } from "@/components/charts/Hypothes
 import { BacktestChart } from "@/components/charts/BacktestChart";
 import { GradualStrategyChart } from "@/components/charts/GradualStrategyChart";
 import { WindowEquityChart, WindowSummaryTable } from "@/components/charts/WindowAnalysisChart";
+import { CandidatesEquityChart, CandidatePanel } from "@/components/charts/SignalCandidates";
 
 const REPO_URL = "https://github.com/post0318/6";
 
@@ -117,6 +118,25 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <div className="flex flex-col gap-4">
           <WindowSummaryTable data={data.windowAnalysis} />
           <WindowEquityChart data={data.windowAnalysis} />
+        </div>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">
+          백테스트 ④: 후보 A/B/C 비교 &amp; 실전 매매 시그널
+        </h2>
+        <p className="mb-3 text-xs text-[#898781]">
+          위험조정 최적점 근방의 세 후보(A: 초기 50%/추가매수 20%, B: 초기 40%/추가매수 10%
+          분할 없음, C: 같은 B를 2거래일에 나눠 편입)를 비교합니다. 각 후보 아래에는 나스닥
+          종가·FG 지수 위에 실제 매수(파랑)·매도(주황) 신호를 겹쳐 그린 차트와, 신호별
+          결과 포지션(비중)을 보여주는 표가 있습니다 — 실제로 이 규칙대로 투자했다면 언제
+          얼마를 사고팔았을지 그대로 재현한 것입니다.
+        </p>
+        <div className="flex flex-col gap-4">
+          <CandidatesEquityChart candidates={data.signalCandidates} buyHold={data.windowAnalysis.equityCurve} />
+          {data.signalCandidates.map((c) => (
+            <CandidatePanel key={c.id} candidate={c} timeseries={data.timeseries} />
+          ))}
         </div>
       </section>
 
