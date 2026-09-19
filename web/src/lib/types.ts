@@ -98,6 +98,38 @@ export interface GradualBacktestData {
   equityCurve: GradualEquityPoint[];
 }
 
+export interface WindowStat extends BacktestPerfStats {
+  peakToTrough: number;
+  peakToRecovery: number;
+}
+
+export interface WindowEquityPoint {
+  date: string;
+  buyHold: number | null;
+  v1: number | null;
+  v2Default: number | null;
+  v2Optimal: number | null;
+}
+
+export interface WindowAnalysisData {
+  window: { peakDate: string; troughDate: string; recoveryDate: string };
+  optimalParams: {
+    initial_allocation: number;
+    ramp_days: number;
+    buy_interval_days: number;
+    buy_step: number;
+    resell_level: number;
+    crash_level: number;
+  };
+  summary: {
+    buyHold: WindowStat;
+    v1: WindowStat;
+    v2Default: WindowStat;
+    v2Optimal: WindowStat;
+  };
+  equityCurve: WindowEquityPoint[];
+}
+
 export interface DashboardData {
   meta: {
     generatedAt: string;
@@ -113,4 +145,5 @@ export interface DashboardData {
   hypothesis2: Record<HorizonKey, Hypothesis2Stat>;
   backtestThreshold: BacktestData;
   backtestGradual: GradualBacktestData;
+  windowAnalysis: WindowAnalysisData;
 }

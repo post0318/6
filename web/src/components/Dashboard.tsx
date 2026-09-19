@@ -7,6 +7,7 @@ import { CorrelationChart } from "@/components/charts/CorrelationChart";
 import { Hypothesis1Chart, Hypothesis2Chart } from "@/components/charts/HypothesisCharts";
 import { BacktestChart } from "@/components/charts/BacktestChart";
 import { GradualStrategyChart } from "@/components/charts/GradualStrategyChart";
+import { WindowEquityChart, WindowSummaryTable } from "@/components/charts/WindowAnalysisChart";
 
 const REPO_URL = "https://github.com/post0318/6";
 
@@ -97,6 +98,26 @@ export function Dashboard({ data }: { data: DashboardData }) {
           중 FG가 20 밑으로 가면 즉시 전량매수 후 다음 매도 신호까지 보유합니다.
         </p>
         <GradualStrategyChart backtest={data.backtestGradual} />
+      </section>
+
+      <section className="mb-12">
+        <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">
+          백테스트 ③: 파라미터 최적화 + 실제 약세장 구간 검증
+        </h2>
+        <p className="mb-3 text-xs text-[#898781]">
+          초기편입 {(data.windowAnalysis.optimalParams.initial_allocation * 100).toFixed(0)}%
+          ({data.windowAnalysis.optimalParams.ramp_days}거래일) &middot; 추가매수{" "}
+          {(data.windowAnalysis.optimalParams.buy_step * 100).toFixed(0)}%씩{" "}
+          {data.windowAnalysis.optimalParams.buy_interval_days}거래일마다 &middot; 재진입/매도{" "}
+          {data.windowAnalysis.optimalParams.resell_level} &middot; 급락전량매수{" "}
+          {data.windowAnalysis.optimalParams.crash_level} — 전체기간 집계 지표만으로는 &quot;거의
+          모든 조합이 이긴다&quot;는 착시가 생겨서, 실제 나스닥 약세장(2021-11~2022-12,
+          -36.4%) 구간에서 각 전략이 실제로 어떻게 버텼는지를 따로 확인했습니다.
+        </p>
+        <div className="flex flex-col gap-4">
+          <WindowSummaryTable data={data.windowAnalysis} />
+          <WindowEquityChart data={data.windowAnalysis} />
+        </div>
       </section>
 
       <footer className="border-t border-black/10 pt-6 text-xs text-[#898781]">

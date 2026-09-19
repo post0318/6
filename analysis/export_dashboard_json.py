@@ -25,6 +25,7 @@ from strategy_fg_threshold import (  # noqa: E402
     run_strategy,
 )
 import strategy_fg_gradual  # noqa: E402
+from optimize_v2 import load_arrays as load_opt_arrays, perf_from_equity, simulate as simulate_opt  # noqa: E402
 
 OUT_PATH = ROOT / "web" / "public" / "data" / "dashboard.json"
 
@@ -188,6 +189,60 @@ def build_backtest_gradual() -> dict:
     }
 
 
+PEAK_DATE = "2021-11-19"
+TROUGH_DATE = "2022-12-28"
+RECOVERY_DATE = "2024-02-29"
+
+# session 7/8에서 찾은 "위험조정 최적" 조합
+OPT_PARAMS = dict(initial_allocation=0.50, ramp_days=1, buy_interval_days=21, buy_step=0.20, resell_level=65, crash_level=30)
+
+
+def build_window_analysis() -> dict:
+    fg, price, dates = load_opt_arrays()
+    date_strs = dates.dt.strftime("%Y-%m-%d")
+    peak_idx = int(date_strs[date_strs == PEAK_DATE].index[0])
+    trough_idx = int(date_strs[date_strs == TROUGH_DATE].index[0])
+    recovery_idx = int(date_strs[date_strs == RECOVERY_DATE].index[0])
+
+    bench_eq = 100.0 * (price / price[0])
+    v1_eq = pd.read_csv(ROOT / "backtest" / "equity_curve.csv")["strategy_equity"].to_numpy()
+    v2_default_eq = pd.read_csv(ROOT / "backtest" / "equity_curve_gradual.csv")["strategy_equity"].to_numpy()
+    v2_opt_eq = simulate_opt(fg, price, **OPT_PARAMS)
+
+    curves = {
+        "buyHold": bench_eq,
+        "v1": v1_eq,
+        "v2Default": v2_default_eq,
+        "v2Optimal": v2_opt_eq,
+    }
+
+    def window_stats(eq: np.ndarray) -> dict:
+        stats = perf_from_equity(eq, dates)
+        return {
+            "peakToTrough": clean((eq[trough_idx] / eq[peak_idx]) - 1),
+            "peakToRecovery": clean((eq[recovery_idx] / eq[peak_idx]) - 1),
+            **{k: clean(v) for k, v in stats.items()},
+        }
+
+    equity_curve = [
+        {
+            "date": date_strs.iloc[i],
+            "buyHold": clean(bench_eq[i]),
+            "v1": clean(v1_eq[i]),
+            "v2Default": clean(v2_default_eq[i]),
+            "v2Optimal": clean(v2_opt_eq[i]),
+        }
+        for i in range(len(fg))
+    ]
+
+    return {
+        "window": {"peakDate": PEAK_DATE, "troughDate": TROUGH_DATE, "recoveryDate": RECOVERY_DATE},
+        "optimalParams": OPT_PARAMS,
+        "summary": {name: window_stats(eq) for name, eq in curves.items()},
+        "equityCurve": equity_curve,
+    }
+
+
 def main() -> None:
     df = load_merged()
 
@@ -214,6 +269,7 @@ def main() -> None:
         "hypothesis2": build_hypothesis2(df),
         "backtestThreshold": build_backtest(),
         "backtestGradual": build_backtest_gradual(),
+        "windowAnalysis": build_window_analysis(),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -226,6 +282,7 @@ def main() -> None:
     print("bucketSummary extreme fear 1w:", payload["bucketSummary"]["extreme fear"]["byHorizon"]["1w"])
     print("backtestThreshold strategy vs benchmark:", payload["backtestThreshold"]["strategy"], payload["backtestThreshold"]["benchmark"])
     print("backtestGradual strategy vs benchmark:", payload["backtestGradual"]["strategy"], payload["backtestGradual"]["benchmark"])
+    print("windowAnalysis summary:", json.dumps(payload["windowAnalysis"]["summary"], indent=2))
 
 
 if __name__ == "__main__":

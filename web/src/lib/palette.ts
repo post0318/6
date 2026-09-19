@@ -8,10 +8,12 @@ export const INK_MUTED = "#898781";
 export const GRIDLINE = "#e1e0d9";
 export const BASELINE = "#c3c2b7";
 
-// 카테고리 팔레트 (고정 순서, 슬롯 1=blue, 2=orange)
+// 카테고리 팔레트 (고정 순서, 슬롯 1=blue, 2=orange, 3=aqua, 4=yellow)
 export const CATEGORICAL = {
   blue: "#2a78d6",
   orange: "#eb6834",
+  aqua: "#1baf7a",
+  yellow: "#eda100",
 };
 
 // 발산형(diverging) 쌍: blue <-> red, 중립 회색 중간값
