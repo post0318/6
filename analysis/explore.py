@@ -3,6 +3,12 @@
 Fear & Greed 지수 구간/변화와 나스닥 종합지수 이후 수익률의 관계를 살펴본다.
 결과는 notes/session1_findings.md 에 요약해 기록한다. (session 9부터 벤치마크를
 S&P 500에서 나스닥 종합지수(^IXIC)로 변경 — notes/session9_nasdaq.md 참고)
+
+Session 16: 2020-07-16 ~ 2021-01-21 구간은 CNN graphdata 응답의 92%(131일 중 121일)가
+정확히 50.0(neutral) placeholder였음이 확인됨 — 실제 계산된 값이 아니라 결측치를
+채운 더미값으로 보인다(2021-01-22부터는 이런 정확히-50.0 패턴이 전혀 나타나지 않음).
+이 구간을 신뢰할 수 없어 CLEAN_START_DATE 이전 데이터는 전부 제외한다. 자세한 내용은
+notes/session16_data_quality.md 참고.
 """
 
 from __future__ import annotations
@@ -17,6 +23,9 @@ FG_PATH = ROOT / "data" / "fear_greed.csv"
 INDEX_PATH = ROOT / "data" / "nasdaq.csv"
 
 FORWARD_WINDOWS = {"1w": 5, "1m": 21, "3m": 63, "6m": 126, "12m": 252}
+
+# 2020-07-16 ~ 2021-01-21 구간은 92%가 placeholder(정확히 50.0)라 신뢰할 수 없음(session 16).
+CLEAN_START_DATE = "2021-01-22"
 
 
 def load_merged() -> pd.DataFrame:
@@ -33,6 +42,7 @@ def load_merged() -> pd.DataFrame:
         "fear_and_greed_historical": "fg",
         "fear_and_greed_historical_rating": "fg_rating",
     })
+    df = df[df["date"] >= CLEAN_START_DATE].reset_index(drop=True)
 
     # 미래 수익률 (forward return)
     for label, n in FORWARD_WINDOWS.items():

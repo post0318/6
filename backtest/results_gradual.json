@@ -7,116 +7,74 @@
     "weekly_step": 0.05,
     "cash_interest": 0.0,
     "date_range": {
-      "start": "2020-07-16",
+      "start": "2021-01-22",
       "end": "2026-09-18"
     }
   },
   "strategy": {
-    "total_return": 0.7742,
-    "cagr": 0.0973,
+    "total_return": 0.4207,
+    "cagr": 0.0641,
     "max_drawdown": -0.294,
-    "annualized_vol": 0.1828,
-    "sharpe_like": 0.601
+    "annualized_vol": 0.1804,
+    "sharpe_like": 0.436
   },
   "benchmark_buy_and_hold": {
-    "total_return": 1.5323,
-    "cagr": 0.1624,
+    "total_return": 0.9584,
+    "cagr": 0.1262,
     "max_drawdown": -0.364,
-    "annualized_vol": 0.223,
-    "sharpe_like": 0.789
+    "annualized_vol": 0.2231,
+    "sharpe_like": 0.646
   },
   "final_weight": 0.9997,
-  "num_trades": 187,
+  "num_trades": 181,
   "trade_counts": {
-    "WEEKLY_BUY": 156,
+    "WEEKLY_BUY": 151,
     "SELL_ALL": 21,
     "RAMP_BUY": 5,
-    "CRASH_FULL_BUY": 5
+    "CRASH_FULL_BUY": 4
   },
   "trades": [
     {
-      "date": "2020-07-16",
+      "date": "2021-01-22",
       "action": "RAMP_BUY",
-      "fg": 50.0,
-      "price": 10473.83,
+      "fg": 68.9,
+      "price": 13543.06,
       "pctOfPortfolio": 0.06
     },
     {
-      "date": "2020-07-17",
+      "date": "2021-01-25",
       "action": "RAMP_BUY",
-      "fg": 50.0,
-      "price": 10503.19,
+      "fg": 68.9,
+      "price": 13635.99,
       "pctOfPortfolio": 0.06
     },
     {
-      "date": "2020-07-20",
+      "date": "2021-01-26",
       "action": "RAMP_BUY",
-      "fg": 50.0,
-      "price": 10767.09,
+      "fg": 69.7,
+      "price": 13626.06,
       "pctOfPortfolio": 0.06
     },
     {
-      "date": "2020-07-21",
+      "date": "2021-01-27",
       "action": "RAMP_BUY",
-      "fg": 50.0,
-      "price": 10680.36,
+      "fg": 67.4,
+      "price": 13270.6,
       "pctOfPortfolio": 0.06
     },
     {
-      "date": "2020-07-22",
+      "date": "2021-01-28",
       "action": "RAMP_BUY",
-      "fg": 50.0,
-      "price": 10706.13,
+      "fg": 28.2,
+      "price": 13337.16,
       "pctOfPortfolio": 0.06
     },
     {
-      "date": "2020-07-29",
+      "date": "2021-02-03",
       "action": "WEEKLY_BUY",
-      "fg": 50.0,
-      "price": 10542.94,
+      "fg": 60.47,
+      "price": 13610.54,
       "pctOfPortfolio": 0.05
-    },
-    {
-      "date": "2020-08-05",
-      "action": "WEEKLY_BUY",
-      "fg": 50.0,
-      "price": 10998.4,
-      "pctOfPortfolio": 0.05
-    },
-    {
-      "date": "2020-08-12",
-      "action": "WEEKLY_BUY",
-      "fg": 50.0,
-      "price": 11012.24,
-      "pctOfPortfolio": 0.05
-    },
-    {
-      "date": "2020-08-19",
-      "action": "WEEKLY_BUY",
-      "fg": 50.0,
-      "price": 11146.46,
-      "pctOfPortfolio": 0.05
-    },
-    {
-      "date": "2020-08-26",
-      "action": "WEEKLY_BUY",
-      "fg": 50.0,
-      "price": 11665.06,
-      "pctOfPortfolio": 0.05
-    },
-    {
-      "date": "2020-09-02",
-      "action": "WEEKLY_BUY",
-      "fg": 50.0,
-      "price": 12056.44,
-      "pctOfPortfolio": 0.05
-    },
-    {
-      "date": "2020-09-04",
-      "action": "CRASH_FULL_BUY",
-      "fg": 2.6,
-      "price": 11313.13,
-      "pctOfPortfolio": 0.3837
     },
     {
       "date": "2021-02-09",

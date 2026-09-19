@@ -5,39 +5,27 @@
     "initial_capital": 100.0,
     "cash_interest": 0.0,
     "date_range": {
-      "start": "2020-07-16",
+      "start": "2021-01-22",
       "end": "2026-09-18"
     }
   },
   "strategy": {
-    "total_return": 0.4291,
-    "cagr": 0.0595,
+    "total_return": 0.1542,
+    "cagr": 0.0257,
     "max_drawdown": -0.3146,
-    "annualized_vol": 0.1735,
-    "sharpe_like": 0.421
+    "annualized_vol": 0.1707,
+    "sharpe_like": 0.234
   },
   "benchmark_buy_and_hold": {
-    "total_return": 1.5323,
-    "cagr": 0.1624,
+    "total_return": 0.9584,
+    "cagr": 0.1262,
     "max_drawdown": -0.364,
-    "annualized_vol": 0.223,
-    "sharpe_like": 0.789
+    "annualized_vol": 0.2231,
+    "sharpe_like": 0.646
   },
-  "pct_days_in_market": 0.4139,
-  "num_trades": 12,
+  "pct_days_in_market": 0.3768,
+  "num_trades": 10,
   "trades": [
-    {
-      "date": "2020-09-04",
-      "action": "BUY",
-      "fg": 2.6,
-      "price": 11313.13
-    },
-    {
-      "date": "2021-02-09",
-      "action": "SELL",
-      "fg": 72.87,
-      "price": 14007.7
-    },
     {
       "date": "2021-07-20",
       "action": "BUY",
