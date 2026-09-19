@@ -3,3 +3,10 @@ __pycache__/
 .venv/
 venv/
 .omc/
+.claude/
+
+# web (Next.js dashboard)
+web/node_modules/
+web/.next/
+web/.vercel/
+web/next-env.d.ts
