@@ -92,10 +92,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
           백테스트 ②: 30% 초기편입 + 계단식 매수 전략 vs Buy&amp;Hold
         </h2>
         <p className="mb-3 text-xs text-[#898781]">
-          시작일에 지수와 무관하게 30%를 편입하고, FG가 65 밑으로 내려가면 매수 진행 모드가
-          켜져 매주 수요일 5%p씩 비중을 늘립니다(65를 다시 넘어도 계속). FG가 75를 넘으면
-          전량매도 후 재트리거(65 하회)를 기다리고, 매수 진행 중 FG가 25 밑으로 가면 즉시
-          전량매수로 전환합니다.
+          첫 5거래일 동안 매일 6%p씩(지수 무관) 편입해 30%까지 채우고, 이후 FG가 70 이상이면
+          전량매도, 70 밑이면 매주 수요일 5%p씩 비중을 늘리는 사이클을 반복합니다. 매수 진행
+          중 FG가 20 밑으로 가면 즉시 전량매수 후 다음 매도 신호까지 보유합니다.
         </p>
         <GradualStrategyChart backtest={data.backtestGradual} />
       </section>

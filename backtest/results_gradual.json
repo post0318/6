@@ -1,9 +1,9 @@
 {
   "params": {
-    "initial_allocation": 0.3,
-    "buy_trigger": 65.0,
-    "sell_threshold": 75.0,
-    "crash_full_buy": 25.0,
+    "ramp_days": 5,
+    "ramp_daily_step": 0.06,
+    "resell_level": 70.0,
+    "crash_full_buy": 20.0,
     "weekly_step": 0.05,
     "cash_interest": 0.0,
     "date_range": {
@@ -12,11 +12,11 @@
     }
   },
   "strategy": {
-    "total_return": 1.0456,
-    "cagr": 0.1229,
-    "max_drawdown": -0.2543,
-    "annualized_vol": 0.1513,
-    "sharpe_like": 0.845
+    "total_return": 0.6583,
+    "cagr": 0.0854,
+    "max_drawdown": -0.2277,
+    "annualized_vol": 0.1398,
+    "sharpe_like": 0.658
   },
   "benchmark_buy_and_hold": {
     "total_return": 1.3792,
@@ -26,27 +26,48 @@
     "sharpe_like": 0.933
   },
   "final_weight": 1.0,
-  "num_trades": 97,
+  "num_trades": 190,
   "trade_counts": {
-    "WEEKLY_BUY": 82,
-    "SELL_ALL": 9,
-    "CRASH_FULL_BUY": 5,
-    "INITIAL_BUY": 1
+    "WEEKLY_BUY": 158,
+    "SELL_ALL": 22,
+    "RAMP_BUY": 5,
+    "CRASH_FULL_BUY": 5
   },
   "trades": [
     {
       "date": "2020-07-16",
-      "action": "INITIAL_BUY",
+      "action": "RAMP_BUY",
       "fg": 50.0,
       "price": 3215.57,
-      "pctOfPortfolio": 0.3
+      "pctOfPortfolio": 0.06
+    },
+    {
+      "date": "2020-07-17",
+      "action": "RAMP_BUY",
+      "fg": 50.0,
+      "price": 3224.73,
+      "pctOfPortfolio": 0.06
+    },
+    {
+      "date": "2020-07-20",
+      "action": "RAMP_BUY",
+      "fg": 50.0,
+      "price": 3251.84,
+      "pctOfPortfolio": 0.06
+    },
+    {
+      "date": "2020-07-21",
+      "action": "RAMP_BUY",
+      "fg": 50.0,
+      "price": 3257.3,
+      "pctOfPortfolio": 0.06
     },
     {
       "date": "2020-07-22",
-      "action": "WEEKLY_BUY",
+      "action": "RAMP_BUY",
       "fg": 50.0,
       "price": 3276.02,
-      "pctOfPortfolio": 0.05
+      "pctOfPortfolio": 0.06
     },
     {
       "date": "2020-07-29",
@@ -95,13 +116,13 @@
       "action": "CRASH_FULL_BUY",
       "fg": 2.6,
       "price": 3455.06,
-      "pctOfPortfolio": 0.3324
+      "pctOfPortfolio": 0.3844
     },
     {
-      "date": "2021-02-09",
+      "date": "2021-02-08",
       "action": "SELL_ALL",
-      "fg": 75.4,
-      "price": 3911.23
+      "fg": 72.87,
+      "price": 3915.59
     },
     {
       "date": "2021-02-24",
@@ -244,10 +265,23 @@
       "pctOfPortfolio": 0.0315
     },
     {
-      "date": "2021-11-09",
+      "date": "2021-11-03",
       "action": "SELL_ALL",
-      "fg": 77.17,
-      "price": 4685.25
+      "fg": 72.2,
+      "price": 4660.57
+    },
+    {
+      "date": "2021-11-17",
+      "action": "WEEKLY_BUY",
+      "fg": 69.2,
+      "price": 4688.67,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2021-11-18",
+      "action": "SELL_ALL",
+      "fg": 70.14,
+      "price": 4704.54
     },
     {
       "date": "2021-11-24",
@@ -257,17 +291,73 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2021-11-30",
-      "action": "CRASH_FULL_BUY",
-      "fg": 24.77,
-      "price": 4567.0,
-      "pctOfPortfolio": 0.9514
+      "date": "2021-12-01",
+      "action": "WEEKLY_BUY",
+      "fg": 25.36,
+      "price": 4513.04,
+      "pctOfPortfolio": 0.05
     },
     {
-      "date": "2022-12-01",
+      "date": "2021-12-08",
+      "action": "WEEKLY_BUY",
+      "fg": 41.31,
+      "price": 4701.21,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2021-12-15",
+      "action": "WEEKLY_BUY",
+      "fg": 37.8,
+      "price": 4709.85,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2021-12-22",
+      "action": "WEEKLY_BUY",
+      "fg": 39.54,
+      "price": 4696.56,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2021-12-29",
+      "action": "WEEKLY_BUY",
+      "fg": 64.03,
+      "price": 4793.06,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2022-01-05",
+      "action": "WEEKLY_BUY",
+      "fg": 51.03,
+      "price": 4700.58,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2022-01-12",
+      "action": "WEEKLY_BUY",
+      "fg": 55.94,
+      "price": 4726.35,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2022-01-19",
+      "action": "WEEKLY_BUY",
+      "fg": 44.83,
+      "price": 4532.76,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2022-01-26",
+      "action": "CRASH_FULL_BUY",
+      "fg": 19.51,
+      "price": 4349.93,
+      "pctOfPortfolio": 0.5676
+    },
+    {
+      "date": "2022-11-30",
       "action": "SELL_ALL",
-      "fg": 75.6,
-      "price": 4076.57
+      "fg": 73.97,
+      "price": 4080.11
     },
     {
       "date": "2022-12-07",
@@ -326,10 +416,10 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2023-02-01",
+      "date": "2023-01-31",
       "action": "SELL_ALL",
-      "fg": 82.17,
-      "price": 4119.21
+      "fg": 70.34,
+      "price": 4076.6
     },
     {
       "date": "2023-02-22",
@@ -353,17 +443,107 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2023-03-13",
-      "action": "CRASH_FULL_BUY",
-      "fg": 23.36,
-      "price": 3855.76,
-      "pctOfPortfolio": 0.8539
+      "date": "2023-03-15",
+      "action": "WEEKLY_BUY",
+      "fg": 22.69,
+      "price": 3891.93,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-03-22",
+      "action": "WEEKLY_BUY",
+      "fg": 41.03,
+      "price": 3936.97,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-03-29",
+      "action": "WEEKLY_BUY",
+      "fg": 41.46,
+      "price": 4027.81,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-04-05",
+      "action": "WEEKLY_BUY",
+      "fg": 52.63,
+      "price": 4090.38,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-04-12",
+      "action": "WEEKLY_BUY",
+      "fg": 60.74,
+      "price": 4091.95,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-04-19",
+      "action": "WEEKLY_BUY",
+      "fg": 67.26,
+      "price": 4154.52,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-04-26",
+      "action": "WEEKLY_BUY",
+      "fg": 52.4,
+      "price": 4055.99,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-05-03",
+      "action": "WEEKLY_BUY",
+      "fg": 54.63,
+      "price": 4090.75,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-05-10",
+      "action": "WEEKLY_BUY",
+      "fg": 59.97,
+      "price": 4137.64,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-05-17",
+      "action": "WEEKLY_BUY",
+      "fg": 60.26,
+      "price": 4158.77,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-05-24",
+      "action": "WEEKLY_BUY",
+      "fg": 61.83,
+      "price": 4115.24,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-05-31",
+      "action": "WEEKLY_BUY",
+      "fg": 64.17,
+      "price": 4179.83,
+      "pctOfPortfolio": 0.05
     },
     {
       "date": "2023-06-02",
       "action": "SELL_ALL",
       "fg": 75.43,
       "price": 4282.37
+    },
+    {
+      "date": "2023-06-07",
+      "action": "WEEKLY_BUY",
+      "fg": 74.46,
+      "price": 4267.52,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-06-08",
+      "action": "SELL_ALL",
+      "fg": 75.77,
+      "price": 4293.93
     },
     {
       "date": "2023-08-09",
@@ -415,17 +595,107 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2023-09-26",
-      "action": "CRASH_FULL_BUY",
-      "fg": 24.23,
-      "price": 4273.53,
-      "pctOfPortfolio": 0.6592
+      "date": "2023-09-27",
+      "action": "WEEKLY_BUY",
+      "fg": 22.83,
+      "price": 4274.51,
+      "pctOfPortfolio": 0.05
     },
     {
-      "date": "2023-12-19",
+      "date": "2023-10-04",
+      "action": "WEEKLY_BUY",
+      "fg": 20.99,
+      "price": 4263.75,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-10-11",
+      "action": "WEEKLY_BUY",
+      "fg": 34.34,
+      "price": 4376.95,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-10-18",
+      "action": "WEEKLY_BUY",
+      "fg": 30.57,
+      "price": 4314.6,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-10-25",
+      "action": "WEEKLY_BUY",
+      "fg": 25.21,
+      "price": 4186.77,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-11-01",
+      "action": "WEEKLY_BUY",
+      "fg": 32.17,
+      "price": 4237.86,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-11-08",
+      "action": "WEEKLY_BUY",
+      "fg": 39.77,
+      "price": 4382.78,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-11-15",
+      "action": "WEEKLY_BUY",
+      "fg": 52.54,
+      "price": 4502.88,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-11-22",
+      "action": "WEEKLY_BUY",
+      "fg": 65.06,
+      "price": 4556.62,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-11-29",
+      "action": "WEEKLY_BUY",
+      "fg": 63.29,
+      "price": 4550.58,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-12-06",
+      "action": "WEEKLY_BUY",
+      "fg": 63.97,
+      "price": 4549.34,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-12-13",
+      "action": "WEEKLY_BUY",
+      "fg": 67.54,
+      "price": 4707.09,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-12-14",
       "action": "SELL_ALL",
-      "fg": 82.97,
-      "price": 4768.37
+      "fg": 70.54,
+      "price": 4719.55
+    },
+    {
+      "date": "2023-12-20",
+      "action": "WEEKLY_BUY",
+      "fg": 75.57,
+      "price": 4698.35,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2023-12-21",
+      "action": "SELL_ALL",
+      "fg": 77.0,
+      "price": 4746.75
     },
     {
       "date": "2024-01-17",
@@ -435,11 +705,10 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2024-01-24",
-      "action": "WEEKLY_BUY",
-      "fg": 72.49,
-      "price": 4868.55,
-      "pctOfPortfolio": 0.05
+      "date": "2024-01-19",
+      "action": "SELL_ALL",
+      "fg": 72.83,
+      "price": 4839.81
     },
     {
       "date": "2024-01-31",
@@ -449,17 +718,23 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2024-02-07",
+      "date": "2024-02-01",
+      "action": "SELL_ALL",
+      "fg": 72.34,
+      "price": 4906.19
+    },
+    {
+      "date": "2024-02-14",
       "action": "WEEKLY_BUY",
-      "fg": 73.77,
-      "price": 4995.06,
+      "fg": 67.51,
+      "price": 5000.62,
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2024-02-09",
+      "date": "2024-02-15",
       "action": "SELL_ALL",
-      "fg": 75.43,
-      "price": 5026.61
+      "fg": 73.86,
+      "price": 5029.73
     },
     {
       "date": "2024-02-21",
@@ -469,10 +744,10 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2024-02-27",
+      "date": "2024-02-22",
       "action": "SELL_ALL",
-      "fg": 75.77,
-      "price": 5078.18
+      "fg": 73.94,
+      "price": 5087.03
     },
     {
       "date": "2024-03-13",
@@ -482,6 +757,12 @@
       "pctOfPortfolio": 0.05
     },
     {
+      "date": "2024-03-14",
+      "action": "SELL_ALL",
+      "fg": 70.4,
+      "price": 5150.48
+    },
+    {
       "date": "2024-03-20",
       "action": "WEEKLY_BUY",
       "fg": 69.63,
@@ -489,11 +770,23 @@
       "pctOfPortfolio": 0.05
     },
     {
+      "date": "2024-03-21",
+      "action": "SELL_ALL",
+      "fg": 71.37,
+      "price": 5241.53
+    },
+    {
       "date": "2024-03-27",
       "action": "WEEKLY_BUY",
       "fg": 69.77,
       "price": 5248.49,
       "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-04-01",
+      "action": "SELL_ALL",
+      "fg": 71.26,
+      "price": 5243.77
     },
     {
       "date": "2024-04-03",
@@ -612,13 +905,184 @@
       "action": "WEEKLY_BUY",
       "fg": 46.89,
       "price": 5522.3,
-      "pctOfPortfolio": 0.0344
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-08-06",
+      "action": "CRASH_FULL_BUY",
+      "fg": 19.01,
+      "price": 5240.03,
+      "pctOfPortfolio": 0.1384
+    },
+    {
+      "date": "2024-09-26",
+      "action": "SELL_ALL",
+      "fg": 70.74,
+      "price": 5745.37
+    },
+    {
+      "date": "2024-10-02",
+      "action": "WEEKLY_BUY",
+      "fg": 70.57,
+      "price": 5709.54,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-10-04",
+      "action": "SELL_ALL",
+      "fg": 71.4,
+      "price": 5751.07
+    },
+    {
+      "date": "2024-10-16",
+      "action": "WEEKLY_BUY",
+      "fg": 69.03,
+      "price": 5842.47,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-10-18",
+      "action": "SELL_ALL",
+      "fg": 72.43,
+      "price": 5864.67
+    },
+    {
+      "date": "2024-10-23",
+      "action": "WEEKLY_BUY",
+      "fg": 63.2,
+      "price": 5797.42,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-10-30",
+      "action": "WEEKLY_BUY",
+      "fg": 57.2,
+      "price": 5813.67,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-11-06",
+      "action": "WEEKLY_BUY",
+      "fg": 44.0,
+      "price": 5929.04,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-11-13",
+      "action": "WEEKLY_BUY",
+      "fg": 66.31,
+      "price": 5985.38,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-11-20",
+      "action": "WEEKLY_BUY",
+      "fg": 49.51,
+      "price": 5917.11,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-11-27",
+      "action": "WEEKLY_BUY",
+      "fg": 64.4,
+      "price": 5998.74,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-12-04",
+      "action": "WEEKLY_BUY",
+      "fg": 57.49,
+      "price": 6086.49,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-12-11",
+      "action": "WEEKLY_BUY",
+      "fg": 49.2,
+      "price": 6084.19,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-12-18",
+      "action": "WEEKLY_BUY",
+      "fg": 33.13,
+      "price": 5872.16,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2024-12-19",
+      "action": "CRASH_FULL_BUY",
+      "fg": 19.51,
+      "price": 5867.08,
+      "pctOfPortfolio": 0.5519
+    },
+    {
+      "date": "2025-05-14",
+      "action": "SELL_ALL",
+      "fg": 70.4,
+      "price": 5892.58
+    },
+    {
+      "date": "2025-05-21",
+      "action": "WEEKLY_BUY",
+      "fg": 66.23,
+      "price": 5844.61,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-05-28",
+      "action": "WEEKLY_BUY",
+      "fg": 64.74,
+      "price": 5888.55,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-06-04",
+      "action": "WEEKLY_BUY",
+      "fg": 54.89,
+      "price": 5970.81,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-06-11",
+      "action": "WEEKLY_BUY",
+      "fg": 64.2,
+      "price": 6022.24,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-06-18",
+      "action": "WEEKLY_BUY",
+      "fg": 54.29,
+      "price": 5980.87,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-06-25",
+      "action": "WEEKLY_BUY",
+      "fg": 59.26,
+      "price": 6092.16,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-07-02",
+      "action": "WEEKLY_BUY",
+      "fg": 63.71,
+      "price": 6227.42,
+      "pctOfPortfolio": 0.05
     },
     {
       "date": "2025-07-03",
       "action": "SELL_ALL",
       "fg": 77.63,
       "price": 6279.35
+    },
+    {
+      "date": "2025-07-30",
+      "action": "WEEKLY_BUY",
+      "fg": 68.03,
+      "price": 6362.9,
+      "pctOfPortfolio": 0.05
     },
     {
       "date": "2025-08-06",
@@ -698,11 +1162,185 @@
       "pctOfPortfolio": 0.05
     },
     {
-      "date": "2025-10-16",
+      "date": "2025-10-22",
+      "action": "WEEKLY_BUY",
+      "fg": 26.37,
+      "price": 6699.4,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-10-29",
+      "action": "WEEKLY_BUY",
+      "fg": 42.11,
+      "price": 6890.59,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-11-05",
+      "action": "WEEKLY_BUY",
+      "fg": 23.06,
+      "price": 6796.29,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-11-12",
+      "action": "WEEKLY_BUY",
+      "fg": 34.57,
+      "price": 6850.92,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2025-11-17",
       "action": "CRASH_FULL_BUY",
-      "fg": 23.11,
-      "price": 6629.07,
-      "pctOfPortfolio": 0.4437
+      "fg": 11.64,
+      "price": 6672.41,
+      "pctOfPortfolio": 0.189
+    },
+    {
+      "date": "2026-05-01",
+      "action": "SELL_ALL",
+      "fg": 71.17,
+      "price": 7230.12
+    },
+    {
+      "date": "2026-05-06",
+      "action": "WEEKLY_BUY",
+      "fg": 68.74,
+      "price": 7365.12,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-05-13",
+      "action": "WEEKLY_BUY",
+      "fg": 64.97,
+      "price": 7444.25,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-05-20",
+      "action": "WEEKLY_BUY",
+      "fg": 60.51,
+      "price": 7432.97,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-05-27",
+      "action": "WEEKLY_BUY",
+      "fg": 60.63,
+      "price": 7520.36,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-06-03",
+      "action": "WEEKLY_BUY",
+      "fg": 54.63,
+      "price": 7553.68,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-06-10",
+      "action": "WEEKLY_BUY",
+      "fg": 27.29,
+      "price": 7266.99,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-06-17",
+      "action": "WEEKLY_BUY",
+      "fg": 32.94,
+      "price": 7420.1,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-06-24",
+      "action": "WEEKLY_BUY",
+      "fg": 26.46,
+      "price": 7358.22,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-07-01",
+      "action": "WEEKLY_BUY",
+      "fg": 31.63,
+      "price": 7483.23,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-07-08",
+      "action": "WEEKLY_BUY",
+      "fg": 38.63,
+      "price": 7482.71,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-07-15",
+      "action": "WEEKLY_BUY",
+      "fg": 44.43,
+      "price": 7572.4,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-07-22",
+      "action": "WEEKLY_BUY",
+      "fg": 44.43,
+      "price": 7498.96,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-07-29",
+      "action": "WEEKLY_BUY",
+      "fg": 25.56,
+      "price": 7316.15,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-08-05",
+      "action": "WEEKLY_BUY",
+      "fg": 60.23,
+      "price": 7723.55,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-08-12",
+      "action": "WEEKLY_BUY",
+      "fg": 61.69,
+      "price": 7748.5,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-08-19",
+      "action": "WEEKLY_BUY",
+      "fg": 56.63,
+      "price": 7707.98,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-08-26",
+      "action": "WEEKLY_BUY",
+      "fg": 53.94,
+      "price": 7675.7,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-09-02",
+      "action": "WEEKLY_BUY",
+      "fg": 46.06,
+      "price": 7666.6,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-09-09",
+      "action": "WEEKLY_BUY",
+      "fg": 38.2,
+      "price": 7636.36,
+      "pctOfPortfolio": 0.05
+    },
+    {
+      "date": "2026-09-16",
+      "action": "WEEKLY_BUY",
+      "fg": 27.31,
+      "price": 7551.81,
+      "pctOfPortfolio": 0.0431
     }
   ]
 }

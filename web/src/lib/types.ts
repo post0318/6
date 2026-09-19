@@ -83,9 +83,9 @@ export interface GradualEquityPoint {
 
 export interface GradualBacktestData {
   params: {
-    initialAllocation: number;
-    buyTrigger: number;
-    sellThreshold: number;
+    rampDays: number;
+    rampDailyStep: number;
+    resellLevel: number;
     crashFullBuy: number;
     weeklyStep: number;
     cashInterest: number;

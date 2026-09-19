@@ -115,13 +115,14 @@ export function GradualStrategyChart({ backtest }: { backtest: GradualBacktestDa
       </div>
 
       <p className="text-xs text-[#898781]">
-        규칙: 시작일 30% 초기 편입(지수 무관) &rarr; FG가 {params.buyTrigger} 밑으로 내려가면
-        &quot;매수 진행&quot; 시작, 이후 매주 수요일 포트폴리오의 {params.weeklyStep * 100}%p씩
-        추가 매수(65를 다시 넘어도 계속) &rarr; FG가 {params.sellThreshold} 이상이면 전량매도
-        후 재트리거 대기 &rarr; 매수 진행 중 FG가 {params.crashFullBuy} 밑이면 즉시 100% 전량매수.
-        현금은 무이자, 거래비용 미반영. 총 거래 {numTrades}회 (초기매수 1 · 주간매수{" "}
-        {tradeCounts.WEEKLY_BUY ?? 0} · 전량매도 {tradeCounts.SELL_ALL ?? 0} · 급락전량매수{" "}
-        {tradeCounts.CRASH_FULL_BUY ?? 0}).
+        규칙: 첫 {params.rampDays}거래일 동안 매일 {params.rampDailyStep * 100}%p씩(지수 무관)
+        편입해 30% 도달 &rarr; 이후 FG가 {params.resellLevel} 이상이면 전량매도, {params.resellLevel}{" "}
+        밑이면 매수 진행 모드로 매주 수요일 {params.weeklyStep * 100}%p씩 추가 매수(다시{" "}
+        {params.resellLevel}을 넘으면 매도, 밑돌면 재개하는 사이클 반복) &rarr; 매수 진행 중
+        FG가 {params.crashFullBuy} 밑이면 즉시 100% 전량매수 후 다음 매도 신호까지 보유.
+        현금은 무이자, 거래비용 미반영. 총 거래 {numTrades}회 (초기램프{" "}
+        {params.rampDays} · 주간매수 {tradeCounts.WEEKLY_BUY ?? 0} · 전량매도{" "}
+        {tradeCounts.SELL_ALL ?? 0} · 급락전량매수 {tradeCounts.CRASH_FULL_BUY ?? 0}).
       </p>
 
       <div className="rounded-lg border border-black/10 p-4" style={{ background: CHART_SURFACE }}>

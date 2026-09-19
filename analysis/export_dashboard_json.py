@@ -171,9 +171,9 @@ def build_backtest_gradual() -> dict:
 
     return {
         "params": {
-            "initialAllocation": strategy_fg_gradual.INITIAL_ALLOCATION,
-            "buyTrigger": strategy_fg_gradual.BUY_TRIGGER,
-            "sellThreshold": strategy_fg_gradual.SELL_THRESHOLD,
+            "rampDays": strategy_fg_gradual.RAMP_DAYS,
+            "rampDailyStep": strategy_fg_gradual.RAMP_DAILY_STEP,
+            "resellLevel": strategy_fg_gradual.RESELL_LEVEL,
             "crashFullBuy": strategy_fg_gradual.CRASH_FULL_BUY,
             "weeklyStep": strategy_fg_gradual.WEEKLY_STEP,
             "cashInterest": 0.0,
