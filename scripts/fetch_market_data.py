@@ -7,7 +7,7 @@ from pathlib import Path
 import yfinance as yf
 
 TICKER = "^IXIC"
-START_DATE = "2020-07-01"
+START_DATE = "2011-01-01"  # session 17: 2011~ 공포탐욕지수 외부 데이터에 맞춰 확장
 OUT_PATH = Path(__file__).resolve().parent.parent / "data" / "nasdaq.csv"
 
 

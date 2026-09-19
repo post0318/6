@@ -7,8 +7,14 @@ S&P 500에서 나스닥 종합지수(^IXIC)로 변경 — notes/session9_nasdaq.
 Session 16: 2020-07-16 ~ 2021-01-21 구간은 CNN graphdata 응답의 92%(131일 중 121일)가
 정확히 50.0(neutral) placeholder였음이 확인됨 — 실제 계산된 값이 아니라 결측치를
 채운 더미값으로 보인다(2021-01-22부터는 이런 정확히-50.0 패턴이 전혀 나타나지 않음).
-이 구간을 신뢰할 수 없어 CLEAN_START_DATE 이전 데이터는 전부 제외한다. 자세한 내용은
-notes/session16_data_quality.md 참고.
+자세한 내용은 notes/session16_data_quality.md 참고.
+
+Session 17: 사용자가 제공한 외부 데이터(data/fear_greed_2011_2025_external.csv, CNN
+지수를 2011-01-03부터 정수로 기록한 파일)를 CUTOVER_DATE 이후 우리 데이터와 대조
+검증(2021-01-22~ 겹치는 992일 상관계수 0.997, 2022+ 만도 0.997 — 신뢰할 수 있음).
+CUTOVER_DATE 이전 구간(2020-07 오염 구간 포함, 2011까지)은 이 외부 데이터로 대체해
+표본을 대폭 확장한다. CUTOVER_DATE부터는 소수점까지 있는 우리 자체 데이터를 그대로
+쓴다(정밀도가 더 높으므로). 자세한 내용은 notes/session17_extended_history.md 참고.
 """
 
 from __future__ import annotations
@@ -20,29 +26,47 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 FG_PATH = ROOT / "data" / "fear_greed.csv"
+EXTERNAL_FG_PATH = ROOT / "data" / "fear_greed_2011_2025_external.csv"
 INDEX_PATH = ROOT / "data" / "nasdaq.csv"
 
 FORWARD_WINDOWS = {"1w": 5, "1m": 21, "3m": 63, "6m": 126, "12m": 252}
 
-# 2020-07-16 ~ 2021-01-21 구간은 92%가 placeholder(정확히 50.0)라 신뢰할 수 없음(session 16).
-CLEAN_START_DATE = "2021-01-22"
+# 이 날짜부터는 소수점 있는 우리 자체 스크레이핑 데이터를 쓰고, 이전은 외부 데이터로
+# 대체한다(session 16/17 — 2020-07~2021-01 placeholder 오염 구간 포함).
+CUTOVER_DATE = "2021-01-22"
+
+
+def _rating_from_score(score: float) -> str:
+    if score < 25:
+        return "extreme fear"
+    if score < 45:
+        return "fear"
+    if score <= 55:
+        return "neutral"
+    if score <= 75:
+        return "greed"
+    return "extreme greed"
+
+
+def _load_fg_combined() -> pd.DataFrame:
+    own = pd.read_csv(FG_PATH, parse_dates=["date"])[
+        ["date", "fear_and_greed_historical", "fear_and_greed_historical_rating"]
+    ].rename(columns={"fear_and_greed_historical": "fg", "fear_and_greed_historical_rating": "fg_rating"})
+    own = own[own["date"] >= CUTOVER_DATE]
+
+    ext = pd.read_csv(EXTERNAL_FG_PATH, parse_dates=["Date"]).rename(columns={"Date": "date", "Fear Greed Index": "fg"})
+    ext = ext[ext["date"] < CUTOVER_DATE].copy()
+    ext["fg_rating"] = ext["fg"].apply(_rating_from_score)
+
+    combined = pd.concat([ext[["date", "fg", "fg_rating"]], own[["date", "fg", "fg_rating"]]])
+    return combined.sort_values("date").reset_index(drop=True)
 
 
 def load_merged() -> pd.DataFrame:
-    fg = pd.read_csv(FG_PATH, parse_dates=["date"])
+    fg = _load_fg_combined()
     idx = pd.read_csv(INDEX_PATH, parse_dates=["date"])
 
-    df = pd.merge(
-        fg[["date", "fear_and_greed_historical", "fear_and_greed_historical_rating"]],
-        idx[["date", "close"]],
-        on="date",
-        how="inner",
-    ).sort_values("date").reset_index(drop=True)
-    df = df.rename(columns={
-        "fear_and_greed_historical": "fg",
-        "fear_and_greed_historical_rating": "fg_rating",
-    })
-    df = df[df["date"] >= CLEAN_START_DATE].reset_index(drop=True)
+    df = pd.merge(fg, idx[["date", "close"]], on="date", how="inner").sort_values("date").reset_index(drop=True)
 
     # 미래 수익률 (forward return)
     for label, n in FORWARD_WINDOWS.items():
