@@ -5,6 +5,12 @@
 
 결과를 buy & hold(동일기간 지수 매수 후 보유)와 비교해 backtest/results.json,
 backtest/equity_curve.csv 로 저장한다.
+
+Session 14: FG(D)는 통계적으로 D일 당일 종가 움직임과 강하게 연동되어 있음이 확인됨
+(FG 변화 vs 당일수익률 상관계수 0.56, 전날/다음날과는 거의 무상관). 즉 FG(D)의 최종값은
+D일 종가 데이터가 있어야 확정되므로, "FG(D)로 판단해 그날 D 종가에 체결"은 동시성을
+가정하는 셈이라 더 보수적으로 신호를 하루 지연시킨다: FG는 하루 뒤로 shift해서
+"FG(D-1)로 판단하고 D일 종가에 체결"하도록 바꿨다(=신호를 알고 난 다음 거래일에 체결).
 """
 
 from __future__ import annotations
@@ -24,8 +30,11 @@ INITIAL_CAPITAL = 100.0  # 지수화(=100)해서 비교
 
 
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv(MERGED_PATH, parse_dates=["date"])
-    return df[["date", "fg", "close"]].sort_values("date").reset_index(drop=True)
+    df = pd.read_csv(MERGED_PATH, parse_dates=["date"]).sort_values("date").reset_index(drop=True)
+    df = df[["date", "fg", "close"]].copy()
+    # 신호-체결 1일 지연: 전날까지 알려진 FG로 오늘 종가에 체결
+    df["fg"] = df["fg"].shift(1).bfill()
+    return df
 
 
 def run_strategy(df: pd.DataFrame) -> pd.DataFrame:

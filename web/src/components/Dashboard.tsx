@@ -78,6 +78,16 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </div>
       </section>
 
+      <div className="mb-8 rounded-lg border border-[#eda100]/30 bg-[#eda100]/5 p-3 text-xs text-[#52514e]">
+        <span className="font-medium text-[#0b0b0b]">⚠ 신호-체결 타이밍 안내: </span>
+        CNN Fear &amp; Greed 지수는 통계적으로 그날 당일 종가 움직임과 강하게 연동되어
+        있음이 확인됐습니다(당일 수익률과의 상관계수 0.56, 전날·다음날과는 거의 무관).
+        즉 FG(D)의 최종값은 D일 종가 데이터가 있어야 확정되므로, 아래 모든 백테스트는
+        보수적으로 <strong>하루 지연</strong>을 두어 &quot;FG(D-1)로 판단하고 D일 종가에
+        체결&quot;하도록 계산합니다(신호를 안 순간과 체결 가능한 순간을 동일시하지
+        않기 위함).
+      </div>
+
       <section className="mb-12">
         <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">
           백테스트 ①: FG 임계값 전략 vs Buy&amp;Hold

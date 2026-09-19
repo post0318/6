@@ -42,8 +42,11 @@ INITIAL_CAPITAL = 100.0
 
 
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv(MERGED_PATH, parse_dates=["date"])
-    return df[["date", "fg", "close"]].sort_values("date").reset_index(drop=True)
+    df = pd.read_csv(MERGED_PATH, parse_dates=["date"]).sort_values("date").reset_index(drop=True)
+    df = df[["date", "fg", "close"]].copy()
+    # 신호-체결 1일 지연 (session 14): 전날까지 알려진 FG로 오늘 종가에 체결
+    df["fg"] = df["fg"].shift(1).bfill()
+    return df
 
 
 def run_strategy(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:

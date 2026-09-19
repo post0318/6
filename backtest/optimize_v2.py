@@ -14,6 +14,10 @@ v2의 메커니즘(램프업 -> 단일 재진입/매도 임계값 -> 계단식 �
 주의: 스캔 속도를 위해 요일(수요일) 앵커 대신 "거래일 카운트" 기반 주기를 쓴다 — 결과가
 strategy_fg_gradual.py(요일 앵커 버전)와 완전히 같은 숫자는 아니고 근사치다. 최적 후보를
 찾은 뒤에는 정밀 버전(strategy_fg_gradual.py)으로 재검증해서 최종 수치를 확정한다.
+
+Session 14: load_arrays()가 반환하는 fg는 하루 지연(shift)된 값이다 — FG(D)는 D일 당일
+종가와 강하게 연동됨이 확인되어(상관계수 0.56), "FG(D)로 판단, D일 종가 체결"은 동시성을
+가정하는 셈이라 더 보수적으로 "FG(D-1)로 판단, D일 종가 체결"로 바꿨다.
 """
 
 from __future__ import annotations
@@ -46,7 +50,9 @@ CRASH_LEVELS = [10, 15, 20, 25, 30]
 
 def load_arrays() -> tuple[np.ndarray, np.ndarray, pd.Series]:
     df = pd.read_csv(MERGED_PATH, parse_dates=["date"]).sort_values("date").reset_index(drop=True)
-    return df["fg"].to_numpy(), df["close"].to_numpy(), df["date"]
+    # 신호-체결 1일 지연 (session 14): 전날까지 알려진 FG로 오늘 종가에 체결
+    fg_lagged = df["fg"].shift(1).bfill()
+    return fg_lagged.to_numpy(), df["close"].to_numpy(), df["date"]
 
 
 def simulate(
