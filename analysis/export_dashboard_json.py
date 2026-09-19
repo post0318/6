@@ -284,6 +284,11 @@ SIGNAL_CANDIDATES = [
         "label": "G: 40%/10%, 초기 10회 분할, 14일",
         "params": dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=14, buy_step=0.10, resell_level=65, crash_level=30),
     },
+    {
+        "id": "H",
+        "label": "H: F/79/31 (초기 40% 10회 분할, 10%씩 21일, 트리거 79/31)",
+        "params": dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=79, crash_level=31),
+    },
 ]
 
 

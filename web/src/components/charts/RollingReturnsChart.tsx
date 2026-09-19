@@ -12,9 +12,9 @@ import {
   YAxis,
 } from "recharts";
 import type { RollingSeriesPoint } from "@/lib/types";
-import { CATEGORICAL, CHART_SURFACE, GRIDLINE, INK_MUTED } from "@/lib/palette";
+import { CATEGORICAL, CHART_SURFACE, GRIDLINE, INK_MUTED, INK_PRIMARY } from "@/lib/palette";
 
-const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; color: string }[] = [
+const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; color: string; dash?: string }[] = [
   { key: "buyHold", label: "Buy & Hold", color: CATEGORICAL.orange },
   { key: "A", label: "후보 A", color: CATEGORICAL.blue },
   { key: "B", label: "후보 B", color: CATEGORICAL.aqua },
@@ -23,6 +23,7 @@ const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; colo
   { key: "E", label: "후보 E", color: CATEGORICAL.green },
   { key: "F", label: "후보 F", color: CATEGORICAL.violet },
   { key: "G", label: "후보 G", color: CATEGORICAL.red },
+  { key: "H", label: "후보 H (F/79/31)", color: INK_PRIMARY, dash: "6 3" },
 ];
 
 function tickFormatter(dates: string[]) {
@@ -103,6 +104,7 @@ export function RollingReturnsChart({
               name={s.key}
               stroke={s.color}
               strokeWidth={1.75}
+              strokeDasharray={s.dash}
               dot={false}
               isAnimationActive={false}
             />

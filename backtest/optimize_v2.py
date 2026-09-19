@@ -64,6 +64,7 @@ def simulate(
     buy_step: float,
     resell_level: float,
     crash_level: float,
+    crash_buy_fraction: float = 1.0,
 ) -> np.ndarray:
     n = len(fg)
     cash = INITIAL_CAPITAL
@@ -100,8 +101,8 @@ def simulate(
                 total = cash + shares * p
                 cw = (shares * p) / total if total > 0 else 0.0
 
-                if buying_active and f < crash_level and cw < 1.0 - 1e-9:
-                    bv = cash
+                if buying_active and crash_buy_fraction > 0 and f < crash_level and cw < 1.0 - 1e-9:
+                    bv = crash_buy_fraction * cash
                     shares += bv / p
                     cash -= bv
                     days_since = 0

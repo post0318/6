@@ -34,6 +34,8 @@ const CANDIDATE_COLORS: Record<string, string> = {
   E: CATEGORICAL.green,
   F: CATEGORICAL.violet,
   G: CATEGORICAL.red,
+  // 팔레트 8슬롯은 Buy&Hold+A~G가 다 써서, H는 새 색을 만들지 않고 검정 계열 점선(복합 인코딩)으로 구분
+  H: INK_PRIMARY,
 };
 
 const ACTION_KO: Record<SignalTrade["action"], string> = {
@@ -79,10 +81,10 @@ export function CandidatesEquityChart({
 
   return (
     <div className="rounded-lg border border-black/10 p-4" style={{ background: CHART_SURFACE }}>
-      <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">후보 A/B/C 자산가치 비교 (시작값 100 기준)</h4>
+      <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">후보 A~H 자산가치 비교 (시작값 100 기준)</h4>
       <p className="mb-3 text-xs text-[#898781]">
-        일곱 후보의 성과 차이는 매우 작습니다 — B/C/D/F(모두 40%/10% 계열)는 거의 겹쳐
-        보입니다.
+        A~G의 성과 차이는 매우 작습니다 — B/C/D/F(모두 40%/10% 계열)는 거의 겹쳐 보입니다.
+        점선(H)은 트리거만 79/31로 바꾼 설정이라 나머지와 모양이 달라집니다.
       </p>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
@@ -110,6 +112,7 @@ export function CandidatesEquityChart({
               name={c.id}
               stroke={CANDIDATE_COLORS[c.id] ?? INK_PRIMARY}
               strokeWidth={2}
+              strokeDasharray={c.id === "H" ? "6 3" : undefined}
               dot={false}
               isAnimationActive={false}
             />

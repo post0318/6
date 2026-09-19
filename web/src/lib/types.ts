@@ -207,4 +207,5 @@ export interface RollingSeriesPoint {
   E: number;
   F: number;
   G: number;
+  H: number;
 }
