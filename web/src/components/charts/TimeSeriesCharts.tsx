@@ -54,14 +54,14 @@ function tickFormatter(dates: string[]) {
   };
 }
 
-export function Sp500Chart({ data }: { data: TimeseriesPoint[] }) {
+export function NasdaqChart({ data }: { data: TimeseriesPoint[] }) {
   const dates = data.map((d) => d.date);
   return (
     <div
       className="rounded-lg border border-black/10 p-4"
       style={{ background: CHART_SURFACE }}
     >
-      <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">S&amp;P 500 종가</h4>
+      <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">나스닥 종합지수 종가</h4>
       <p className="mb-3 text-xs text-[#898781]">일별 종가, 2020-07 ~ 현재</p>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} syncId="fg-sp-sync" margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
@@ -84,14 +84,14 @@ export function Sp500Chart({ data }: { data: TimeseriesPoint[] }) {
           <Tooltip
             content={
               <TimeTooltip
-                valueLabel="S&P 500"
+                valueLabel="나스닥"
                 formatter={(v) => v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               />
             }
           />
           <Line
             type="monotone"
-            dataKey="sp500"
+            dataKey="nasdaq"
             stroke={CATEGORICAL.blue}
             strokeWidth={2}
             dot={false}

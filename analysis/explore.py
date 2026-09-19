@@ -1,7 +1,8 @@
 """Phase 2: 탐색적 분석.
 
-Fear & Greed 지수 구간/변화와 S&P 500 이후 수익률의 관계를 살펴본다.
-결과는 notes/session1_findings.md 에 요약해 기록한다.
+Fear & Greed 지수 구간/변화와 나스닥 종합지수 이후 수익률의 관계를 살펴본다.
+결과는 notes/session1_findings.md 에 요약해 기록한다. (session 9부터 벤치마크를
+S&P 500에서 나스닥 종합지수(^IXIC)로 변경 — notes/session9_nasdaq.md 참고)
 """
 
 from __future__ import annotations
@@ -13,18 +14,18 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 FG_PATH = ROOT / "data" / "fear_greed.csv"
-SP_PATH = ROOT / "data" / "sp500.csv"
+INDEX_PATH = ROOT / "data" / "nasdaq.csv"
 
 FORWARD_WINDOWS = {"1w": 5, "1m": 21, "3m": 63, "6m": 126, "12m": 252}
 
 
 def load_merged() -> pd.DataFrame:
     fg = pd.read_csv(FG_PATH, parse_dates=["date"])
-    sp = pd.read_csv(SP_PATH, parse_dates=["date"])
+    idx = pd.read_csv(INDEX_PATH, parse_dates=["date"])
 
     df = pd.merge(
         fg[["date", "fear_and_greed_historical", "fear_and_greed_historical_rating"]],
-        sp[["date", "close"]],
+        idx[["date", "close"]],
         on="date",
         how="inner",
     ).sort_values("date").reset_index(drop=True)

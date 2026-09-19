@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Fear & Greed 역발상 투자 리서치 — Project 6",
   description:
-    "CNN Fear & Greed Index와 S&P 500 역발상 투자 가설을 검증하는 리서치 대시보드",
+    "CNN Fear & Greed Index와 나스닥 종합지수 역발상 투자 가설을 검증하는 리서치 대시보드",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

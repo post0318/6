@@ -15,7 +15,7 @@ CNN Fear & Greed Index가 인덱스(S&P 500 등) 투자의 역발상(contrarian)
 
 ## 단계 (Phases)
 
-1. **데이터 수집** — CNN Fear & Greed Index 과거 데이터 + S&P 500(또는 벤치마크 지수) 가격 데이터 확보 (`data/`)
+1. **데이터 수집** — CNN Fear & Greed Index 과거 데이터 + 벤치마크 지수 가격 데이터 확보 (`data/`). 벤치마크는 session 9부터 나스닥 종합지수(^IXIC)로 사용 중 (이전에는 S&P 500).
 2. **탐색적 분석** — 지수 구간(extreme fear/fear/neutral/greed/extreme greed)별 이후 N일/N주 수익률 분포, 상관관계, lag 분석 (`analysis/`)
 3. **회귀분석** — 지수 수준·변화율(반등 여부) 등을 설명변수로 미래 수익률을 회귀 (`analysis/`)
 4. **백테스트 시뮬레이터** — 규칙 기반(또는 여러 요인 가중) 진입/청산 전략을 과거 데이터에 백테스트, buy-and-hold 대비 성과 비교 (`backtest/`)

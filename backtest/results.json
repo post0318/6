@@ -10,18 +10,18 @@
     }
   },
   "strategy": {
-    "total_return": 0.3882,
-    "cagr": 0.0546,
-    "max_drawdown": -0.2277,
-    "annualized_vol": 0.1333,
-    "sharpe_like": 0.467
+    "total_return": 0.3911,
+    "cagr": 0.0549,
+    "max_drawdown": -0.3129,
+    "annualized_vol": 0.1739,
+    "sharpe_like": 0.395
   },
   "benchmark_buy_and_hold": {
-    "total_return": 1.3792,
-    "cagr": 0.1507,
-    "max_drawdown": -0.2543,
-    "annualized_vol": 0.1657,
-    "sharpe_like": 0.933
+    "total_return": 1.5323,
+    "cagr": 0.1624,
+    "max_drawdown": -0.364,
+    "annualized_vol": 0.223,
+    "sharpe_like": 0.789
   },
   "pct_days_in_market": 0.4139,
   "num_trades": 12,
@@ -30,73 +30,73 @@
       "date": "2020-09-03",
       "action": "BUY",
       "fg": 2.6,
-      "price": 3455.06
+      "price": 11458.1
     },
     {
       "date": "2021-02-08",
       "action": "SELL",
       "fg": 72.87,
-      "price": 3915.59
+      "price": 13987.64
     },
     {
       "date": "2021-07-19",
       "action": "BUY",
       "fg": 8.98,
-      "price": 4258.49
+      "price": 14274.98
     },
     {
       "date": "2021-11-03",
       "action": "SELL",
       "fg": 72.2,
-      "price": 4660.57
+      "price": 15811.58
     },
     {
       "date": "2022-01-26",
       "action": "BUY",
       "fg": 19.51,
-      "price": 4349.93
+      "price": 13542.12
     },
     {
       "date": "2022-11-30",
       "action": "SELL",
       "fg": 73.97,
-      "price": 4080.11
+      "price": 11468.0
     },
     {
       "date": "2024-08-06",
       "action": "BUY",
       "fg": 19.01,
-      "price": 5240.03
+      "price": 16366.85
     },
     {
       "date": "2024-09-26",
       "action": "SELL",
       "fg": 70.74,
-      "price": 5745.37
+      "price": 18190.29
     },
     {
       "date": "2024-12-19",
       "action": "BUY",
       "fg": 19.51,
-      "price": 5867.08
+      "price": 19372.77
     },
     {
       "date": "2025-05-14",
       "action": "SELL",
       "fg": 70.4,
-      "price": 5892.58
+      "price": 19146.81
     },
     {
       "date": "2025-11-17",
       "action": "BUY",
       "fg": 11.64,
-      "price": 6672.41
+      "price": 22708.07
     },
     {
       "date": "2026-05-01",
       "action": "SELL",
       "fg": 71.17,
-      "price": 7230.12
+      "price": 25114.44
     }
   ]
 }

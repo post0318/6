@@ -1,4 +1,4 @@
-"""S&P 500(^GSPC) 일별 가격 데이터를 수집해 data/sp500.csv 로 저장한다."""
+"""나스닥 종합지수(^IXIC) 일별 가격 데이터를 수집해 data/nasdaq.csv 로 저장한다."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ from pathlib import Path
 
 import yfinance as yf
 
-TICKER = "^GSPC"
+TICKER = "^IXIC"
 START_DATE = "2020-07-01"
-OUT_PATH = Path(__file__).resolve().parent.parent / "data" / "sp500.csv"
+OUT_PATH = Path(__file__).resolve().parent.parent / "data" / "nasdaq.csv"
 
 
 def main() -> None:

@@ -57,7 +57,7 @@ def build_timeseries(df: pd.DataFrame) -> list[dict]:
         out.append({
             "date": row["date"].strftime("%Y-%m-%d") if hasattr(row["date"], "strftime") else str(row["date"]),
             "fg": clean(row["fg"]),
-            "sp500": clean(row["close"]),
+            "nasdaq": clean(row["close"]),
         })
     return out
 

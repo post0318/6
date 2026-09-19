@@ -13,7 +13,7 @@ export interface RatingMeta {
 export interface TimeseriesPoint {
   date: string;
   fg: number | null;
-  sp500: number | null;
+  nasdaq: number | null;
 }
 
 export interface BucketHorizonStat {
