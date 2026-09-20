@@ -28,6 +28,11 @@ LABELS = [
     ("WD_SELL", "출금 충당 매도"), ("FILL_ADJ", "실제 체결 보정"),
     ("RAMP", "초기 분할편입 중"), ("ACTIVE", "정기매수 진행(초기편입 완료)"), ("SOLD", "매도 후 재진입 대기"),
     ("IDLE", "매수 비활성(FG 매도기준 이상)"), ("CLOSED", "종료"),
+    ("MSG_NODATE", "주문일자가 비어 있습니다. Settings 시트 L2 셀(OrderDate)에 오늘 주문일자를 입력한 뒤 다시 실행하세요."),
+    ("MSG_DUP", "이미 처리한 날짜입니다. OrderDate는 마지막 처리일(LastRunDate, L3)보다 뒤여야 합니다."),
+    ("MSG_NOMKT", "MARKET 시트가 비어 있습니다. 일자 / FG / ETF 종가를 먼저 입력하세요."),
+    ("MSG_MKTDATE", "MARKET 마지막 행의 일자는 OrderDate보다 이전이어야 합니다. (직전 영업일 행까지만 입력)"),
+    ("MSG_PX", "MARKET 마지막 행의 ETF 종가가 올바르지 않습니다."),
 ]
 
 GUIDE = [
@@ -92,6 +97,8 @@ def build_skeleton() -> None:
     for i, (k, v) in enumerate(LABELS, 2):
         s.cell(i, 14, k)
         s.cell(i, 15, v)
+    s["A5"] = "▶ 매일 [주문 산출] 실행 전: L2 셀(OrderDate)에 오늘 주문일자를 입력하세요. (노란색 칸)"
+    s["A5"].font = Font(bold=True, color="C00000")
     for c in list(range(1, 10)) + [10, 11, 12, 14, 15]:
         s.cell(1, c).fill, s.cell(1, c).font = HDR, HFONT
     for col, w in zip("ABCDEFGHIJKLMNO", [8, 10, 10, 16, 12, 12, 12, 12, 10, 14, 34, 14, 3, 14, 22]):

@@ -124,9 +124,12 @@ Private Sub Fast(onOff As Boolean)
     End With
 End Sub
 
-Private Sub Say(msg As String, Optional style As Long = 64)
+Private Sub Say(msg As String, Optional style As Long = 64, Optional korKey As String = "")
+    Dim shown As String
     SetOpt "LastMessage", msg
-    If UCase(OptStr("Silent")) <> "Y" Then MsgBox msg, style
+    shown = msg
+    If korKey <> "" Then shown = Lbl_(korKey) & vbCrLf & vbCrLf & msg
+    If UCase(OptStr("Silent")) <> "Y" Then MsgBox shown, style
 End Sub
 
 '------------------------------ event log -------------------------
@@ -164,7 +167,7 @@ Private Function Lbl_(kind As String) As String
     If lbl Is Nothing Then
         Set lbl = CreateObject("Scripting.Dictionary")
         Set ws = ThisWorkbook.Worksheets("Settings")
-        For r = 2 To 20
+        For r = 2 To 40
             If Trim(CStr(ws.Cells(r, 14).Value)) <> "" Then lbl(Trim(CStr(ws.Cells(r, 14).Value))) = CStr(ws.Cells(r, 15).Value)
         Next r
     End If
@@ -338,19 +341,19 @@ Public Sub RunDay()
     Set wsO = ThisWorkbook.Worksheets("ORDERS")
 
     D = OptNum("OrderDate")
-    If D <= 0 Then Say "Set Settings!OrderDate first.", vbExclamation: Exit Sub
+    If D <= 0 Then Say "Set Settings!OrderDate first.", vbExclamation, "MSG_NODATE": Exit Sub
     D = Int(D)
     lastRun = OptNum("LastRunDate")
-    If D <= lastRun Then Say "OrderDate must be later than LastRunDate (already processed).", vbExclamation: Exit Sub
+    If D <= lastRun Then Say "OrderDate must be later than LastRunDate (already processed).", vbExclamation, "MSG_DUP": Exit Sub
 
     lastM = wsM.Cells(wsM.Rows.Count, 1).End(xlUp).Row
     n = lastM - 1
-    If n < 1 Then Say "MARKET is empty.", vbExclamation: Exit Sub
+    If n < 1 Then Say "MARKET is empty.", vbExclamation, "MSG_NOMKT": Exit Sub
     mk = wsM.Range("A2:C" & lastM).Value
-    If Int(CDbl(mk(n, 1))) >= D Then Say "Last MARKET date must be earlier than OrderDate (signal uses the previous trading day).", vbExclamation: Exit Sub
+    If Int(CDbl(mk(n, 1))) >= D Then Say "Last MARKET date must be earlier than OrderDate (signal uses the previous trading day).", vbExclamation, "MSG_MKTDATE": Exit Sub
     f = CDbl(mk(n, 2))
     px = CDbl(mk(n, 3))
-    If px <= 0 Then Say "Invalid ETF close in the last MARKET row.", vbExclamation: Exit Sub
+    If px <= 0 Then Say "Invalid ETF close in the last MARKET row.", vbExclamation, "MSG_PX": Exit Sub
     isInt = (UCase(OptStr("QtyMode")) = "INT")
 
     Fast True
@@ -474,7 +477,7 @@ Public Sub RunDay()
         Next i
         wsS.Range("A2").Resize(nTr, 22).Value = outS
         wsS.Range("D2").Resize(nTr, 1).NumberFormat = "yyyy-mm-dd"
-        wsS.Range("O2").Resize(nTr, 1).Formula = "=IFERROR(VLOOKUP(N2,Settings!$N$2:$O$20,2,FALSE),N2)&IF(N2=""RAMP"","" ""&P2&""/""&INDEX(Settings!$C$2:$C$21,MATCH(C2,Settings!$A$2:$A$21,0)),"""")"
+        wsS.Range("O2").Resize(nTr, 1).Formula = "=IFERROR(VLOOKUP(N2,Settings!$N$2:$O$40,2,FALSE),N2)&IF(N2=""RAMP"","" ""&P2&""/""&INDEX(Settings!$C$2:$C$21,MATCH(C2,Settings!$A$2:$A$21,0)),"""")"
     End If
 
     ' append LOG
@@ -491,7 +494,7 @@ Public Sub RunDay()
         wsL.Range("L" & lr).Resize(nEv, 1).NumberFormat = "@"
         wsL.Range("A" & lr).Resize(nEv, 13).Value = outL
         wsL.Range("A" & lr).Resize(nEv, 1).NumberFormat = "yyyy-mm-dd"
-        wsL.Range("E" & lr).Resize(nEv, 1).Formula = "=IFERROR(VLOOKUP(D" & lr & ",Settings!$N$2:$O$20,2,FALSE),D" & lr & ")"
+        wsL.Range("E" & lr).Resize(nEv, 1).Formula = "=IFERROR(VLOOKUP(D" & lr & ",Settings!$N$2:$O$40,2,FALSE),D" & lr & ")"
     End If
 
     ' append ORDERS (one row per investor, buy qty OR sell qty)
@@ -579,7 +582,7 @@ Public Sub ApplyFills()
                 wsL.Cells(lr, 8).Value = actSigned * fillPx
                 wsL.Cells(lr, 10).Value = "CONFIRMED"
                 wsL.Cells(lr, 11).Value = dCash
-                wsL.Cells(lr, 5).Formula = "=IFERROR(VLOOKUP(D" & lr & ",Settings!$N$2:$O$20,2,FALSE),D" & lr & ")"
+                wsL.Cells(lr, 5).Formula = "=IFERROR(VLOOKUP(D" & lr & ",Settings!$N$2:$O$40,2,FALSE),D" & lr & ")"
                 wsO.Cells(r, 10).Value = "APPLIED"
                 cnt = cnt + 1
             Else
