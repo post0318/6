@@ -139,6 +139,8 @@ def simulate_with_trades(
     buy_step: float,
     resell_level: float,
     crash_level: float,
+    crash_buy_fraction: float = 1.0,
+    sell_fraction: float = 1.0,
 ):
     """simulate()와 완전히 동일한 로직이지만, 매매 신호(trades)와 비중/매수모드 배열도
     함께 기록한다 — 대시보드의 "실전 매매 시그널" 표시용."""
@@ -146,6 +148,7 @@ def simulate_with_trades(
     cash = INITIAL_CAPITAL
     shares = 0.0
     buying_active = False
+    sold_flag = False
     days_since = 0
     ramp_daily = initial_allocation / ramp_days
     equity = np.empty(n)
@@ -178,28 +181,37 @@ def simulate_with_trades(
                 record(i, "RAMP_BUY", bv / total if total > 0 else None)
         else:
             cw = (shares * p) / total if total > 0 else 0.0
-            if cw > 1e-9 and f >= resell_level:
-                cash += shares * p
-                shares = 0.0
+            if cw > 1e-9 and f >= resell_level and not (sell_fraction < 1.0 and sold_flag):
+                sold_sh = shares * sell_fraction
+                cash += sold_sh * p
+                shares -= sold_sh
                 buying_active = False
+                sold_flag = True
                 days_since = 0
-                record(i, "SELL_ALL")
+                if sell_fraction >= 1.0:
+                    record(i, "SELL_ALL")
+                else:
+                    record(i, "SELL_HALF", cw * sell_fraction)
             else:
                 was_active = buying_active
                 if f < resell_level:
                     buying_active = True
+                    sold_flag = False
                 if buying_active and not was_active:
                     days_since = 0
 
                 total = cash + shares * p
                 cw = (shares * p) / total if total > 0 else 0.0
 
-                if buying_active and f < crash_level and cw < 1.0 - 1e-9:
-                    bv = cash
+                if buying_active and crash_buy_fraction > 0 and f < crash_level and cw < 1.0 - 1e-9:
+                    bv = crash_buy_fraction * cash
                     shares += bv / p
                     cash -= bv
                     days_since = 0
-                    record(i, "CRASH_FULL_BUY", 1.0 - cw)
+                    if crash_buy_fraction >= 1.0:
+                        record(i, "CRASH_FULL_BUY", 1.0 - cw)
+                    else:
+                        record(i, "CRASH_HALF_BUY", bv / total if total > 0 else None)
                 else:
                     days_since += 1
                     if buying_active and days_since >= buy_interval_days and cw < 1.0 - 1e-9:
