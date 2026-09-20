@@ -65,11 +65,16 @@ def simulate(
     resell_level: float,
     crash_level: float,
     crash_buy_fraction: float = 1.0,
+    sell_fraction: float = 1.0,
 ) -> np.ndarray:
+    """sell_fraction<1이면 FG>=resell 국면(에피소드)당 1회만 그 비율만큼 매도하고 나머지는
+    FG<resell로 내려와 매수가 재개될 때까지 보유한다(매일 반씩 팔려 결국 전량 매도가
+    되는 것을 막기 위함). 1.0이면 기존 전량매도와 동일."""
     n = len(fg)
     cash = INITIAL_CAPITAL
     shares = 0.0
     buying_active = False
+    sold_flag = False
     days_since = 0
     ramp_daily = initial_allocation / ramp_days
     equity = np.empty(n)
@@ -86,15 +91,18 @@ def simulate(
                 cash -= bv
         else:
             cw = (shares * p) / total if total > 0 else 0.0
-            if cw > 1e-9 and f >= resell_level:
-                cash += shares * p
-                shares = 0.0
+            if cw > 1e-9 and f >= resell_level and not (sell_fraction < 1.0 and sold_flag):
+                sold_sh = shares * sell_fraction
+                cash += sold_sh * p
+                shares -= sold_sh
                 buying_active = False
+                sold_flag = True
                 days_since = 0
             else:
                 was_active = buying_active
                 if f < resell_level:
                     buying_active = True
+                    sold_flag = False
                 if buying_active and not was_active:
                     days_since = 0
 
