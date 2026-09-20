@@ -52,6 +52,7 @@ Private dWhy As Object
 Private lbl As Object
 Private curRamp As Long
 Private oldN As Long
+Private skipBuy As Long
 Private nEv As Long
 Private dBuy As Object
 Private dSell As Object
@@ -197,7 +198,10 @@ End Sub
 Private Sub DoBuy(idx As Long, value As Double, kind As String, px As Double, isInt As Boolean, d As Double)
     Dim q As Double
     If isInt Then q = Int(value / px + EPS) Else q = value / px
-    If q <= 0 Then Exit Sub
+    If q <= 0 Then
+        If value > EPS Then skipBuy = skipBuy + 1
+        Exit Sub
+    End If
     tr(idx).Cash = tr(idx).Cash - q * px
     tr(idx).Shares = tr(idx).Shares + q
     AddTrade d, idx, kind, q, px
@@ -374,6 +378,7 @@ Public Sub RunDay()
     End If
 
     nEv = 0
+    skipBuy = 0
     ReDim evD(1 To 200): ReDim evInv(1 To 200): ReDim evT(1 To 200): ReDim evKind(1 To 200)
     ReDim evQty(1 To 200): ReDim evPx(1 To 200): ReDim evW(1 To 200): ReDim evAmt(1 To 200)
     ReDim evNote(1 To 200): ReDim evDw(1 To 200)
@@ -383,19 +388,29 @@ Public Sub RunDay()
     Set dSell = CreateObject("Scripting.Dictionary")
     Set dKeys = CreateObject("Scripting.Dictionary")
 
-    ' cash flows dated today
+    ' unprocessed cash flows dated on or before today (blank status)
+    Dim inv As String, amt As Double, strat As String, cnt As Long, dt As Double
+    Dim nDep As Long, nWd As Long, nErr As Long, nFut As Long, nOrd As Long
     lastI = wsI.Cells(wsI.Rows.Count, 1).End(xlUp).Row
     For r = 2 To lastI
         If Trim(CStr(wsI.Cells(r, 1).Value)) <> "" And Trim(CStr(wsI.Cells(r, 5).Value)) = "" Then
-            If IsDate(wsI.Cells(r, 2).Value) Or IsNumeric(wsI.Cells(r, 2).Value) Then
-                If Int(CDbl(wsI.Cells(r, 2).Value)) = D Then
-                    Dim inv As String, amt As Double, strat As String, cnt As Long
+            If Not (IsDate(wsI.Cells(r, 2).Value) Or IsNumeric(wsI.Cells(r, 2).Value)) Then
+                wsI.Cells(r, 5).Value = "ERR:date": nErr = nErr + 1
+            ElseIf Not IsNumeric(wsI.Cells(r, 3).Value) Or IsEmpty(wsI.Cells(r, 3).Value) Then
+                wsI.Cells(r, 5).Value = "ERR:amount": nErr = nErr + 1
+            Else
+                dt = Int(CDbl(wsI.Cells(r, 2).Value))
+                amt = CDbl(wsI.Cells(r, 3).Value)
+                If dt > D Then
+                    nFut = nFut + 1
+                ElseIf amt = 0 Then
+                    wsI.Cells(r, 5).Value = "ERR:amount": nErr = nErr + 1
+                Else
                     inv = Trim(CStr(wsI.Cells(r, 1).Value))
-                    amt = CDbl(wsI.Cells(r, 3).Value)
                     strat = Trim(CStr(wsI.Cells(r, 4).Value))
                     If amt > 0 Then
                         If Not GetParams(strat, P) Then
-                            wsI.Cells(r, 5).Value = "ERR:strategy"
+                            wsI.Cells(r, 5).Value = "ERR:strategy": nErr = nErr + 1
                         Else
                             cnt = 0
                             For i = 1 To nTr
@@ -408,10 +423,12 @@ Public Sub RunDay()
                             tr(nTr).Active = 0: tr(nTr).Sold = 0: tr(nTr).DaysSince = 0: tr(nTr).K = 0: tr(nTr).Closed = 0
                             PushEv D, inv, tr(nTr).TNo, "DEPOSIT", 0, px, 0, amt
                             wsI.Cells(r, 5).Value = "DONE"
+                            nDep = nDep + 1
                         End If
-                    ElseIf amt < 0 Then
+                    Else
                         DoWithdraw inv, -amt, px, isInt, D
                         wsI.Cells(r, 5).Value = "DONE"
+                        nWd = nWd + 1
                     End If
                 End If
             End If
@@ -515,6 +532,7 @@ Public Sub RunDay()
             wsO.Cells(orow, 7).Formula = "=IF(AND(C" & orow & ">0,D" & orow & ">0),""ERROR"",""OK"")"
             wsO.Cells(orow, 11).Value = dWhy(k)
             wsO.Cells(orow, 12).Value = InvWeight(CStr(k), px)
+            nOrd = nOrd + 1
             orow = orow + 1
         End If
     Next k
@@ -522,7 +540,23 @@ Public Sub RunDay()
     SetOpt "LastRunDate", D
     Fast False
     msg = "Orders created for " & Format(D, "yyyy-mm-dd") & " (FG " & Format(f, "0.0") & ", basis close " & Format(px, "0.00") & ")"
-    Say msg, vbInformation
+    Dim kor As String
+    kor = Lbl_("MSG_DONE")
+    kor = Replace(kor, "{DATE}", Format(D, "yyyy-mm-dd"))
+    kor = Replace(kor, "{FG}", Format(f, "0.0"))
+    kor = Replace(kor, "{PX}", Format(px, "#,##0.00"))
+    kor = Replace(kor, "{DEP}", CStr(nDep))
+    kor = Replace(kor, "{WD}", CStr(nWd))
+    kor = Replace(kor, "{ERR}", CStr(nErr))
+    kor = Replace(kor, "{FUT}", CStr(nFut))
+    kor = Replace(kor, "{ORD}", CStr(nOrd))
+    kor = Replace(kor, "{TR}", CStr(nTr))
+    If nTr = 0 Then kor = kor & vbCrLf & Lbl_("MSG_NOINV")
+    If nErr > 0 Then kor = kor & vbCrLf & Lbl_("MSG_ERRROWS")
+    If skipBuy > 0 Then kor = kor & vbCrLf & Replace(Lbl_("MSG_SMALL"), "{SKIP}", CStr(skipBuy))
+    If nOrd = 0 And nTr > 0 Then kor = kor & vbCrLf & Lbl_("MSG_NOORDER")
+    SetOpt "LastMessage", msg
+    If UCase(OptStr("Silent")) <> "Y" Then MsgBox kor, vbInformation
     Exit Sub
 EH:
     Fast False

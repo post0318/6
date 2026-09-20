@@ -117,6 +117,53 @@ def close(a, b, tol=1e-6):
     return math.isclose(a, b, rel_tol=1e-9, abs_tol=tol)
 
 
+def edge_tests(xl, m) -> list[str]:
+    """과거일자 행 처리, 미래일자 대기, 오류행, INT 소액 건너뜀."""
+    fails: list[str] = []
+    path = SCRATCH / "edge.xlsm"
+    shutil.copy(XLSM, path)
+    wb = xl.Workbooks.Open(str(path))
+    st, iv, mk, od, ss = (wb.Worksheets(n) for n in ("Settings", "INVESTOR", "MARKET", "ORDERS", "STATE"))
+
+    def opt(key, val=None):
+        for r in range(2, 20):
+            if st.Cells(r, 10).Value2 == key:
+                if val is not None:
+                    st.Cells(r, 12).Value2 = val
+                return st.Cells(r, 12).Value2
+        raise KeyError(key)
+
+    opt("Silent", "Y")
+    opt("QtyMode", "FRAC")
+    mk.Cells(2, 1).Value2, mk.Cells(2, 2).Value2, mk.Cells(2, 3).Value2 = serial(m[0][0]), m[0][1], m[0][2]
+    d1 = serial(m[1][0])
+    rows = [("P1", d1 - 30, 1e7, "H"), ("P2", d1, 5e6, "I"), ("F1", d1 + 5, 3e6, "H"), ("E1", d1, 1e6, "X"), ("E2", d1, "abc", "H")]
+    for i, (a, b, c, d) in enumerate(rows, 2):
+        iv.Cells(i, 1).Value2, iv.Cells(i, 2).Value2, iv.Cells(i, 3).Value2, iv.Cells(i, 4).Value2 = a, b, c, d
+    opt("OrderDate", d1)
+    xl.Run("RunDay")
+    status = [iv.Cells(i, 5).Value2 for i in range(2, 7)]
+    if status != ["DONE", "DONE", None, "ERR:strategy", "ERR:amount"]:
+        fails.append(f"edge status {status}")
+    o = read_sheet(od, 12)
+    if sorted(r[1] for r in o) != ["P1", "P2"]:
+        fails.append(f"edge orders {[r[1] for r in o]}")
+    if len(read_sheet(ss, 22)) != 2:
+        fails.append("edge tranche count")
+    # INT 소액: 1주 가격보다 작은 입금 -> 주문 0행, 메시지에 건너뜀 안내
+    opt("QtyMode", "INT")
+    iv.Cells(8, 1).Value2, iv.Cells(8, 2).Value2, iv.Cells(8, 3).Value2, iv.Cells(8, 4).Value2 = "S1", serial(m[2][0]), 1000.0, "H"
+    mk.Cells(3, 1).Value2, mk.Cells(3, 2).Value2, mk.Cells(3, 3).Value2 = serial(m[1][0]), m[1][1], m[1][2]
+    opt("OrderDate", serial(m[2][0]))
+    n0 = len(read_sheet(od, 12))
+    xl.Run("RunDay")
+    msg_orders = [r for r in read_sheet(od, 12)[n0:] if r[1] == "S1"]
+    if msg_orders:
+        fails.append("tiny INT deposit should not create an order")
+    wb.Close(False)
+    return fails
+
+
 def main() -> int:
     import win32com.client as wc
 
@@ -264,6 +311,9 @@ def main() -> int:
             print(f"[{mode}] days={len(m) - 1} tranches={len(tr)} orderRows={n_orders} events={len(xl_ev)} {kinds} -> {'PASS' if ok else 'FAIL'}")
             for f in fails[:15]:
                 print("   ", f)
+        ef = edge_tests(xl, m)
+        ok_all &= not ef
+        print("[edge] " + ("PASS" if not ef else "FAIL " + str(ef)))
     finally:
         xl.Quit()
     return 0 if ok_all else 1
