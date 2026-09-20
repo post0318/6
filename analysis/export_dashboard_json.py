@@ -289,6 +289,11 @@ SIGNAL_CANDIDATES = [
         "label": "H: F/79/31 (초기 40% 10회 분할, 10%씩 21일, 트리거 79/31)",
         "params": dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=79, crash_level=31),
     },
+    {
+        "id": "I",
+        "label": "I: H에서 매도만 50%씩 (FG 79 재돌파마다 보유분의 절반)",
+        "params": dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=79, crash_level=31, sell_fraction=0.5),
+    },
 ]
 
 
@@ -307,13 +312,17 @@ def rolling_summary(equity: np.ndarray, bench_equity: np.ndarray, n: int) -> dic
 
 def current_status(weight: float, buying_active: bool, trades: list[dict], params: dict) -> dict:
     last_trade = trades[-1] if trades else None
+    sf = params.get("sell_fraction", 1.0)
+    sell_word = "전량매도" if sf >= 1.0 else f"보유분의 {sf*100:.0f}% 매도(FG가 기준을 다시 넘을 때마다 반복)"
     if buying_active and weight >= 1.0 - 1e-6:
-        hint = f"완전 편입(100%) 상태 — FG가 {params['resell_level']} 이상이면 전량매도"
+        hint = f"완전 편입(100%) 상태 — FG가 {params['resell_level']} 이상이면 {sell_word}"
     elif buying_active:
         hint = (
             f"매수 진행 중(현재 비중 {weight*100:.0f}%) — 다음 정기매수까지 대기, "
-            f"FG≥{params['resell_level']}이면 즉시 매도, FG<{params['crash_level']}이면 즉시 전량매수"
+            f"FG≥{params['resell_level']}이면 {sell_word}, FG<{params['crash_level']}이면 즉시 전량매수"
         )
+    elif weight > 1e-6:
+        hint = f"{weight*100:.0f}% 보유 중(부분 매도 후) — FG가 {params['resell_level']} 밑으로 내려가면 매수 재개"
     else:
         hint = f"현금 보유 중 — FG가 {params['resell_level']} 밑으로 내려가면 매수 재개"
     return {

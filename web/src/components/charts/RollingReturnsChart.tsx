@@ -24,6 +24,7 @@ const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; colo
   { key: "F", label: "후보 F", color: CATEGORICAL.violet },
   { key: "G", label: "후보 G", color: CATEGORICAL.red },
   { key: "H", label: "후보 H (F/79/31)", color: INK_PRIMARY, dash: "6 3" },
+  { key: "I", label: "후보 I (H+매도50%)", color: INK_PRIMARY, dash: "2 3" },
 ];
 
 function tickFormatter(dates: string[]) {
@@ -105,6 +106,7 @@ export function RollingReturnsChart({
               stroke={s.color}
               strokeWidth={1.75}
               strokeDasharray={s.dash}
+              legendType={s.dash ? "plainline" : undefined}
               dot={false}
               isAnimationActive={false}
             />
