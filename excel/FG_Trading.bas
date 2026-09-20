@@ -329,6 +329,86 @@ Private Function InvWeight(inv As String, px As Double) As Double
     If tt > 0 Then InvWeight = sh / tt Else InvWeight = 0
 End Function
 
+'------------------------------ STATE load / write ----------------
+Private Sub LoadState()
+    Dim wsS As Worksheet, lastI As Long, arr As Variant, i As Long
+    Set wsS = ThisWorkbook.Worksheets("STATE")
+    lastI = wsS.Cells(wsS.Rows.Count, 1).End(xlUp).Row
+    nTr = lastI - 1
+    If nTr < 0 Then nTr = 0
+    oldN = nTr
+    ReDim tr(0 To nTr + 500)
+    If nTr > 0 Then
+        arr = wsS.Range("A2:K" & lastI).Value
+        For i = 1 To nTr
+            tr(i).Inv = CStr(arr(i, 1)): tr(i).TNo = CLng(arr(i, 2)): tr(i).Strat = CStr(arr(i, 3))
+            tr(i).StartDate = CDbl(arr(i, 4)): tr(i).Cash = CDbl(arr(i, 5)): tr(i).Shares = CDbl(arr(i, 6))
+            tr(i).Active = CLng(arr(i, 7)): tr(i).Sold = CLng(arr(i, 8)): tr(i).DaysSince = CLng(arr(i, 9))
+            tr(i).K = CLng(arr(i, 10)): tr(i).Closed = CLng(arr(i, 11))
+        Next i
+    End If
+End Sub
+
+Private Sub WriteState(px As Double, isInt As Boolean)
+    Dim wsS As Worksheet, i As Long, P As ParamT
+    Set wsS = ThisWorkbook.Worksheets("STATE")
+    If oldN > 0 Then wsS.Range("A2:V" & (oldN + 1)).ClearContents
+    If nTr > 0 Then
+        Dim outS() As Variant, tot As Double, w As Double, stg As String, nxt As Double
+        ReDim outS(1 To nTr, 1 To 22)
+        For i = 1 To nTr
+            outS(i, 1) = tr(i).Inv: outS(i, 2) = tr(i).TNo: outS(i, 3) = tr(i).Strat
+            outS(i, 4) = tr(i).StartDate: outS(i, 5) = tr(i).Cash: outS(i, 6) = tr(i).Shares
+            outS(i, 7) = tr(i).Active: outS(i, 8) = tr(i).Sold: outS(i, 9) = tr(i).DaysSince
+            outS(i, 10) = tr(i).K: outS(i, 11) = tr(i).Closed
+            If tr(i).Closed = 1 Then
+                outS(i, 12) = 0: outS(i, 13) = 0: outS(i, 14) = "CLOSED"
+            Else
+                tot = tr(i).Cash + tr(i).Shares * px
+                w = WeightOf(i, px)
+                outS(i, 12) = tot: outS(i, 13) = w
+                If GetParams(tr(i).Strat, P) Then
+                    If tr(i).K < P.Ramp Then
+                        stg = "RAMP"
+                    ElseIf tr(i).Active = 1 Then
+                        stg = "ACTIVE"
+                    ElseIf tr(i).Sold = 1 Then
+                        stg = "SOLD"
+                    Else
+                        stg = "IDLE"
+                    End If
+                    outS(i, 14) = stg
+                    If tr(i).K < P.Ramp Then outS(i, 16) = tr(i).K Else outS(i, 16) = P.Ramp
+                    outS(i, 17) = P.Init * outS(i, 16) / P.Ramp
+                    If stg = "ACTIVE" Then
+                        outS(i, 18) = P.Interval - tr(i).DaysSince
+                        nxt = P.StepPct * tot
+                        If tr(i).Cash < nxt Then nxt = tr(i).Cash
+                        If w >= 1 - EPS Then nxt = 0
+                        outS(i, 19) = nxt
+                        If tot > 0 Then outS(i, 20) = nxt / tot
+                    End If
+                    If stg <> "RAMP" Then
+                        If stg = "SOLD" And P.SellFrac < 1 Then
+                            outS(i, 21) = w: outS(i, 22) = 0
+                        ElseIf P.SellFrac >= 1 Then
+                            outS(i, 21) = 0: outS(i, 22) = tr(i).Shares
+                        Else
+                            outS(i, 21) = w * (1 - P.SellFrac)
+                            If isInt Then outS(i, 22) = Int(tr(i).Shares * P.SellFrac + EPS) Else outS(i, 22) = tr(i).Shares * P.SellFrac
+                        End If
+                    End If
+                End If
+            End If
+        Next i
+        wsS.Range("A2").Resize(nTr, 22).Value = outS
+        wsS.Range("D2").Resize(nTr, 1).NumberFormat = "yyyy-mm-dd"
+        wsS.Range("O2").Resize(nTr, 1).Formula = "=IFERROR(VLOOKUP(N2,Settings!$N$2:$O$40,2,FALSE),N2)&IF(N2=""RAMP"","" ""&P2&""/""&INDEX(Settings!$C$2:$C$21,MATCH(C2,Settings!$A$2:$A$21,0)),"""")"
+    End If
+
+    oldN = nTr
+End Sub
+
 '------------------------------ main: create today's orders -------
 Public Sub RunDay()
     Dim wsM As Worksheet, wsI As Worksheet, wsS As Worksheet, wsL As Worksheet, wsO As Worksheet
@@ -360,22 +440,24 @@ Public Sub RunDay()
     If px <= 0 Then Say "Invalid ETF close in the last MARKET row.", vbExclamation, "MSG_PX": Exit Sub
     isInt = (UCase(OptStr("QtyMode")) = "INT")
 
-    Fast True
-    ' load STATE
-    lastI = wsS.Cells(wsS.Rows.Count, 1).End(xlUp).Row
-    nTr = lastI - 1
-    If nTr < 0 Then nTr = 0
-    oldN = nTr
-    ReDim tr(0 To nTr + 500)
-    If nTr > 0 Then
-        arr = wsS.Range("A2:K" & lastI).Value
-        For i = 1 To nTr
-            tr(i).Inv = CStr(arr(i, 1)): tr(i).TNo = CLng(arr(i, 2)): tr(i).Strat = CStr(arr(i, 3))
-            tr(i).StartDate = CDbl(arr(i, 4)): tr(i).Cash = CDbl(arr(i, 5)): tr(i).Shares = CDbl(arr(i, 6))
-            tr(i).Active = CLng(arr(i, 7)): tr(i).Sold = CLng(arr(i, 8)): tr(i).DaysSince = CLng(arr(i, 9))
-            tr(i).K = CLng(arr(i, 10)): tr(i).Closed = CLng(arr(i, 11))
-        Next i
+    Dim nOld As Long
+    lastI = wsI.Cells(wsI.Rows.Count, 1).End(xlUp).Row
+    For r = 2 To lastI
+        If Trim(CStr(wsI.Cells(r, 1).Value)) <> "" And Trim(CStr(wsI.Cells(r, 5).Value)) = "" Then
+            If IsDate(wsI.Cells(r, 2).Value) Or IsNumeric(wsI.Cells(r, 2).Value) Then
+                If Int(CDbl(wsI.Cells(r, 2).Value)) < D - 7 Then nOld = nOld + 1
+            End If
+        End If
+    Next r
+    If nOld > 0 And UCase(OptStr("Silent")) <> "Y" Then
+        If MsgBox(Replace(Lbl_("MSG_OLDROWS"), "{OLD}", CStr(nOld)), vbYesNo + vbQuestion) <> vbYes Then
+            Say "Cancelled: old-dated rows pending", vbInformation
+            Exit Sub
+        End If
     End If
+
+    Fast True
+    LoadState
 
     nEv = 0
     skipBuy = 0
@@ -442,60 +524,7 @@ Public Sub RunDay()
         End If
     Next i
 
-    ' write STATE (whole table) incl. progress columns
-    If oldN > 0 Then wsS.Range("A2:V" & (oldN + 1)).ClearContents
-    If nTr > 0 Then
-        Dim outS() As Variant, tot As Double, w As Double, stg As String, nxt As Double
-        ReDim outS(1 To nTr, 1 To 22)
-        For i = 1 To nTr
-            outS(i, 1) = tr(i).Inv: outS(i, 2) = tr(i).TNo: outS(i, 3) = tr(i).Strat
-            outS(i, 4) = tr(i).StartDate: outS(i, 5) = tr(i).Cash: outS(i, 6) = tr(i).Shares
-            outS(i, 7) = tr(i).Active: outS(i, 8) = tr(i).Sold: outS(i, 9) = tr(i).DaysSince
-            outS(i, 10) = tr(i).K: outS(i, 11) = tr(i).Closed
-            If tr(i).Closed = 1 Then
-                outS(i, 12) = 0: outS(i, 13) = 0: outS(i, 14) = "CLOSED"
-            Else
-                tot = tr(i).Cash + tr(i).Shares * px
-                w = WeightOf(i, px)
-                outS(i, 12) = tot: outS(i, 13) = w
-                If GetParams(tr(i).Strat, P) Then
-                    If tr(i).K < P.Ramp Then
-                        stg = "RAMP"
-                    ElseIf tr(i).Active = 1 Then
-                        stg = "ACTIVE"
-                    ElseIf tr(i).Sold = 1 Then
-                        stg = "SOLD"
-                    Else
-                        stg = "IDLE"
-                    End If
-                    outS(i, 14) = stg
-                    If tr(i).K < P.Ramp Then outS(i, 16) = tr(i).K Else outS(i, 16) = P.Ramp
-                    outS(i, 17) = P.Init * outS(i, 16) / P.Ramp
-                    If stg = "ACTIVE" Then
-                        outS(i, 18) = P.Interval - tr(i).DaysSince
-                        nxt = P.StepPct * tot
-                        If tr(i).Cash < nxt Then nxt = tr(i).Cash
-                        If w >= 1 - EPS Then nxt = 0
-                        outS(i, 19) = nxt
-                        If tot > 0 Then outS(i, 20) = nxt / tot
-                    End If
-                    If stg <> "RAMP" Then
-                        If stg = "SOLD" And P.SellFrac < 1 Then
-                            outS(i, 21) = w: outS(i, 22) = 0
-                        ElseIf P.SellFrac >= 1 Then
-                            outS(i, 21) = 0: outS(i, 22) = tr(i).Shares
-                        Else
-                            outS(i, 21) = w * (1 - P.SellFrac)
-                            If isInt Then outS(i, 22) = Int(tr(i).Shares * P.SellFrac + EPS) Else outS(i, 22) = tr(i).Shares * P.SellFrac
-                        End If
-                    End If
-                End If
-            End If
-        Next i
-        wsS.Range("A2").Resize(nTr, 22).Value = outS
-        wsS.Range("D2").Resize(nTr, 1).NumberFormat = "yyyy-mm-dd"
-        wsS.Range("O2").Resize(nTr, 1).Formula = "=IFERROR(VLOOKUP(N2,Settings!$N$2:$O$40,2,FALSE),N2)&IF(N2=""RAMP"","" ""&P2&""/""&INDEX(Settings!$C$2:$C$21,MATCH(C2,Settings!$A$2:$A$21,0)),"""")"
-    End If
+    WriteState px, isInt
 
     ' append LOG
     If nEv > 0 Then
@@ -626,6 +655,132 @@ Public Sub ApplyFills()
     Next r
     Fast False
     Say cnt & " fill(s) applied.", vbInformation
+    Exit Sub
+EH:
+    Fast False
+    Say "ERROR " & Err.Number & ": " & Err.Description, vbCritical
+End Sub
+
+'------------------------------ existing investors ----------------
+' IMPORT sheet columns: A id, B strategy, C start date, D cash, E shares,
+' F ramp steps done, G days since last regular buy, H active Y/N, I sold Y/N, J status
+Public Sub ImportExisting()
+    Dim wsX As Worksheet, wsM As Worksheet, wsL As Worksheet
+    Dim lastX As Long, lastM As Long, r As Long, i As Long, cnt As Long, lr As Long
+    Dim inv As String, strat As String, P As ParamT, isInt As Boolean
+    Dim cash As Double, sh As Double, kk As Long, ds As Long, act As Long, sld As Long
+    Dim fLast As Double, px As Double, nOk As Long, nErr As Long, st As String, dStart As Double, v As Variant
+
+    On Error GoTo EH
+    Set wsX = ThisWorkbook.Worksheets("IMPORT")
+    Set wsM = ThisWorkbook.Worksheets("MARKET")
+    Set wsL = ThisWorkbook.Worksheets("LOG")
+    lastM = wsM.Cells(wsM.Rows.Count, 1).End(xlUp).Row
+    If lastM < 2 Then Say "MARKET is empty.", vbExclamation, "MSG_NOMKT": Exit Sub
+    fLast = CDbl(wsM.Cells(lastM, 2).Value)
+    px = CDbl(wsM.Cells(lastM, 3).Value)
+    If px <= 0 Then Say "Invalid ETF close in the last MARKET row.", vbExclamation, "MSG_PX": Exit Sub
+    isInt = (UCase(OptStr("QtyMode")) = "INT")
+
+    Fast True
+    LoadState
+    lastX = wsX.Cells(wsX.Rows.Count, 1).End(xlUp).Row
+    For r = 2 To lastX
+        inv = Trim(CStr(wsX.Cells(r, 1).Value))
+        If inv <> "" And Trim(CStr(wsX.Cells(r, 10).Value)) = "" Then
+            st = ""
+            cash = 0: sh = 0
+            strat = Trim(CStr(wsX.Cells(r, 2).Value))
+            If Not GetParams(strat, P) Then st = "ERR:strategy"
+            If st = "" Then
+                v = wsX.Cells(r, 3).Value
+                If IsDate(v) Or IsNumeric(v) Then dStart = Int(CDbl(v)) Else st = "ERR:date"
+            End If
+            If st = "" Then
+                v = wsX.Cells(r, 4).Value
+                If Not IsEmpty(v) Then
+                    If IsNumeric(v) Then cash = CDbl(v) Else st = "ERR:amount"
+                End If
+                v = wsX.Cells(r, 5).Value
+                If Not IsEmpty(v) Then
+                    If IsNumeric(v) Then sh = CDbl(v) Else st = "ERR:amount"
+                End If
+                If st = "" Then
+                    If cash < 0 Or sh < 0 Or cash + sh * px <= 0 Then st = "ERR:amount"
+                End If
+            End If
+            If st = "" Then
+                kk = P.Ramp: ds = 0
+                v = wsX.Cells(r, 6).Value
+                If Not IsEmpty(v) Then
+                    If IsNumeric(v) Then
+                        kk = CLng(v)
+                        If kk < 0 Then st = "ERR:progress"
+                    Else
+                        st = "ERR:progress"
+                    End If
+                End If
+                v = wsX.Cells(r, 7).Value
+                If Not IsEmpty(v) Then
+                    If IsNumeric(v) Then
+                        ds = CLng(v)
+                        If ds < 0 Then st = "ERR:progress"
+                    Else
+                        st = "ERR:progress"
+                    End If
+                End If
+            End If
+            If st = "" Then
+                sld = 0
+                If UCase(Trim(CStr(wsX.Cells(r, 9).Value))) = "Y" Then sld = 1
+                v = UCase(Trim(CStr(wsX.Cells(r, 8).Value)))
+                If v = "Y" Then
+                    act = 1
+                ElseIf v = "N" Then
+                    act = 0
+                ElseIf kk >= P.Ramp And sld = 0 And fLast < P.Resell Then
+                    act = 1
+                Else
+                    act = 0
+                End If
+                cnt = 0
+                For i = 1 To nTr
+                    If tr(i).Inv = inv Then cnt = cnt + 1
+                Next i
+                nTr = nTr + 1
+                If nTr > UBound(tr) Then ReDim Preserve tr(0 To UBound(tr) * 2)
+                tr(nTr).Inv = inv: tr(nTr).TNo = cnt + 1: tr(nTr).Strat = strat
+                tr(nTr).StartDate = dStart: tr(nTr).Cash = cash: tr(nTr).Shares = sh
+                tr(nTr).Active = act: tr(nTr).Sold = sld: tr(nTr).DaysSince = ds: tr(nTr).K = kk: tr(nTr).Closed = 0
+                lr = wsL.Cells(wsL.Rows.Count, 1).End(xlUp).Row + 1
+                wsL.Cells(lr, 1).Value2 = CDbl(Date): wsL.Cells(lr, 1).NumberFormat = "yyyy-mm-dd"
+                wsL.Cells(lr, 2).Value = inv
+                wsL.Cells(lr, 3).Value = tr(nTr).TNo
+                wsL.Cells(lr, 4).Value = "IMPORT"
+                wsL.Cells(lr, 5).Formula = "=IFERROR(VLOOKUP(D" & lr & ",Settings!$N$2:$O$40,2,FALSE),D" & lr & ")"
+                wsL.Cells(lr, 6).Value = sh
+                wsL.Cells(lr, 7).Value = px
+                wsL.Cells(lr, 8).Value = sh * px
+                wsL.Cells(lr, 10).Value = "CONFIRMED"
+                wsL.Cells(lr, 11).Value = cash
+                st = "DONE"
+                nOk = nOk + 1
+            Else
+                nErr = nErr + 1
+            End If
+            wsX.Cells(r, 10).Value = st
+        End If
+    Next r
+    If nOk > 0 Then WriteState px, isInt
+    Fast False
+    Dim kor As String
+    kor = Lbl_("MSG_IMP_DONE")
+    kor = Replace(kor, "{OK}", CStr(nOk))
+    kor = Replace(kor, "{ERR}", CStr(nErr))
+    kor = Replace(kor, "{TR}", CStr(nTr))
+    If nErr > 0 Then kor = kor & vbCrLf & Lbl_("MSG_ERRROWS")
+    SetOpt "LastMessage", "Imported " & nOk & ", errors " & nErr
+    If UCase(OptStr("Silent")) <> "Y" Then MsgBox kor, vbInformation
     Exit Sub
 EH:
     Fast False

@@ -37,6 +37,9 @@ LABELS = [
     ("MSG_NOINV", "※ 관리 중인 투자자가 없습니다. INVESTOR 시트에 투자자ID / 일자 / 금액 / 전략(H 또는 I)을 붙여넣고 다시 실행하세요."),
     ("MSG_ERRROWS", "※ INVESTOR 시트 처리상태 열에 ERR 표시된 행을 확인하세요(일자·금액·전략 오류). 수정 후 처리상태를 비우면 다음 실행 때 다시 처리됩니다."),
     ("MSG_SMALL", "※ 정수 주 단위(INT)라 1주 가격에 못 미쳐 건너뛴 매수가 {SKIP}건 있습니다. 금액이 작은 투자자는 소수 단위(FRAC) 또는 ETF 단가를 확인하세요."),
+    ("IMPORT", "기존 투자자 등록"),
+    ("MSG_IMP_DONE", "기존 투자자 등록 완료: 성공 {OK}건 / 오류 {ERR}건\n관리 중인 입금건(트랜치) 총 {TR}개 - STATE 시트에서 단계·비중을 확인하세요."),
+    ("MSG_OLDROWS", "OrderDate보다 8일 이상 과거 일자인 미처리 입출금 {OLD}건이 있습니다.\n이런 행은 오늘 자로 새로 시작 처리됩니다. 이미 투자 중인 기존 투자자의 과거 내역이라면 [아니오]를 누르고 IMPORT 시트(기존 투자자 등록)를 사용하세요.\n\n오늘 자로 처리할까요?"),
     ("MSG_NOORDER", "※ 오늘은 신규 매매 대상이 없어 주문이 0행입니다. 진행 상황은 STATE 시트에서 확인하세요."),
 ]
 
@@ -56,6 +59,7 @@ GUIDE = [
     "",
     "[핵심 확인] STATE 시트(투자자·입금건별 1행): 현재 단계(초기 분할편입 n/10 또는 정기매수 진행), 초기편입 누적목표비중, 다음 정기매수까지 남은 영업일과 예정금액·비중증가,",
     "       매도신호가 뜨면 목표비중(H=0%, I=현재 보유의 50%)과 매도수량. ORDERS의 '주문 사유'에는 오늘 주문이 몇 회차 초기편입/정기매수/급락매수/매도 때문인지 표시됨.",
+    "[기존 투자자] 이미 투자 중인 투자자는 IMPORT 시트에 현재 상태(현금, 보유수량, 초기편입 완료회차, 마지막 정기매수 후 경과영업일, 활성/매도완료)를 붙여넣고 [기존 투자자 등록]. INVESTOR 시트에는 앞으로 새로 발생하는 입출금만 넣을 것.",
     "[시트] INVESTOR=입출금 DB(누적, 삭제 금지) / STATE=트랜치별 현재 상태(매 실행 덮어씀) / LOG=매매·입출금·보정 이벤트만 누적 / ORDERS=일별 주문서.",
     "[규칙] 입금 1건 = 트랜치 1개(각자 입금일부터 분할편입). 출금은 현금 우선, 부족분은 보유수량 비례 매도. RunDay는 영업일당 정확히 1회.",
     "[개인정보] 이 파일은 내부망 전용. 이름 등 식별정보 대신 투자자 ID만 사용할 것.",
@@ -125,6 +129,18 @@ def build_skeleton() -> None:
     dv2 = DataValidation(type="list", formula1='"H,I"', allow_blank=True)
     i.add_data_validation(dv2)
     dv2.add("D2:D50000")
+    x = sheet("IMPORT", ["투자자ID", "전략(H/I)", "시작일", "현금", "보유수량", "초기편입 완료회차", "마지막 정기매수 후 경과영업일", "매수활성(Y/N)", "매도완료(Y/N)", "처리상태"],
+              [14, 10, 12, 16, 14, 14, 18, 12, 12, 14])
+    x.column_dimensions["C"].number_format = "yyyy-mm-dd"
+    dv3 = DataValidation(type="list", formula1='"H,I"', allow_blank=True)
+    x.add_data_validation(dv3)
+    dv3.add("B2:B5000")
+    dv4 = DataValidation(type="list", formula1='"Y,N"', allow_blank=True)
+    x.add_data_validation(dv4)
+    dv4.add("H2:I5000")
+    x["L1"] = "기존 투자자를 진행 상태 그대로 이어받는 시트입니다. 최초 1회(또는 신규 이관 시) 붙여넣고 [기존 투자자 등록]을 누르세요."
+    x["L2"] = "필수: 투자자ID, 전략, 시작일, 현금, 보유수량.  비우면: 완료회차=초기편입 완료, 경과영업일=0, 활성=FG<매도기준이면 Y, 매도완료=N."
+    x["L3"] = "등록 후 처리상태에 DONE이 찍히며 STATE에 반영됩니다. ERR 행은 수정 후 처리상태를 비우면 재처리됩니다."
     stt = sheet("STATE", ["투자자ID", "트랜치", "전략", "시작일", "현금", "보유수량", "매수활성", "매도완료", "정기매수경과일", "경과영업일", "종료", "평가액", "주식비중",
                           "단계코드", "현재 단계", "초기편입 완료회차", "초기편입 누적목표비중", "다음 정기매수까지 영업일", "다음 정기매수 예정금액", "예정 비중증가(%p)",
                           "매도신호 시 목표비중", "매도신호 시 매도수량"],
@@ -176,7 +192,7 @@ def inject() -> None:
         wb.VBProject.VBComponents.Import(str(tmp))
         tmp.unlink()
         ws = wb.Worksheets("Settings")
-        for i, (cap, macro) in enumerate([("주문 산출 (RunDay)", "RunDay"), ("체결 반영 (ApplyFills)", "ApplyFills")]):
+        for i, (cap, macro) in enumerate([("주문 산출 (RunDay)", "RunDay"), ("체결 반영 (ApplyFills)", "ApplyFills"), ("기존 투자자 등록 (ImportExisting)", "ImportExisting")]):
             left, top = 20 + i * 190, 130
             b = ws.Buttons().Add(left, top, 180, 36)
             b.OnAction = macro

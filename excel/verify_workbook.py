@@ -1,4 +1,4 @@
-"""FG_Trading_H_I.xlsm 검증: 다중 투자자 시나리오를 엑셀 매크로로 일별 실행하고 reference_engine(전일종가 기준)과 대조한다.
+﻿"""FG_Trading_H_I.xlsm 검증: 다중 투자자 시나리오를 엑셀 매크로로 일별 실행하고 reference_engine(전일종가 기준)과 대조한다.
 
 확인 항목: (1) 일별 주문 수량 일치 (2) 매수/매도 동시 발생 없음 (3) 최종 STATE(현금/수량) 일치
 (4) LOG 매매 이벤트 일치 (5) 중복 실행·날짜 가드 (6) ApplyFills 보정 산식 (7) 저장/재열기 후 연속 실행.
@@ -164,6 +164,88 @@ def edge_tests(xl, m) -> list[str]:
     return fails
 
 
+def import_test(xl, m, flows, mode: str, j: int) -> list[str]:
+    """기존 투자자 일괄 등록: j일 시점의 상태를 IMPORT로 넣고 이어서 실행 -> 끝까지 기준 엔진과 동일해야 한다.
+    MARKET에는 직전 3행만 넣어 과거 데이터 없이도 동작함을 함께 확인한다."""
+    fails: list[str] = []
+    integer = mode == "INT"
+    path = SCRATCH / f"imp_{mode}_{j}.xlsm"
+    shutil.copy(XLSM, path)
+    wb = xl.Workbooks.Open(str(path))
+    st, iv, mk, od, ss, im = (wb.Worksheets(n) for n in ("Settings", "INVESTOR", "MARKET", "ORDERS", "STATE", "IMPORT"))
+
+    def opt(key, val=None):
+        for r in range(2, 20):
+            if st.Cells(r, 10).Value2 == key:
+                if val is not None:
+                    st.Cells(r, 12).Value2 = val
+                return st.Cells(r, 12).Value2
+        raise KeyError(key)
+
+    opt("Silent", "Y")
+    opt("QtyMode", mode)
+    tr_full, ref_orders, _ = replay(m, flows, integer=integer, basis="prev", start_index=1)
+    tr_part, _, _ = replay(m, flows, integer=integer, basis="prev", start_index=1, stop_index=j)
+    mrow = 2
+    for jj in range(j - 3, j):
+        mk.Cells(mrow, 1).Value2, mk.Cells(mrow, 2).Value2, mk.Cells(mrow, 3).Value2 = serial(m[jj][0]), m[jj][1], m[jj][2]
+        mrow += 1
+    row = 2
+    for t in tr_part:
+        if t.closed:
+            continue
+        vals = (t.inv, t.strat, serial(t.start), t.cash, t.shares, t.k, t.days, "Y" if t.active else "N", "Y" if t.sold else "N")
+        for c, v in enumerate(vals, 1):
+            im.Cells(row, c).Value2 = v
+        row += 1
+    n_imp = row - 2
+    xl.Run("ImportExisting")
+    if str(opt("LastMessage")) != f"Imported {n_imp}, errors 0":
+        fails.append(f"import message: {opt('LastMessage')}")
+    by_date: dict[str, list] = {}
+    for f in flows:
+        by_date.setdefault(f[1], []).append(f)
+    irow = 2
+    for jj in range(j, len(m)):
+        for inv, d, amt, strat in by_date.get(m[jj][0], []):
+            for c, v in enumerate((inv, serial(d), amt, strat), 1):
+                iv.Cells(irow, c).Value2 = v
+            irow += 1
+        opt("OrderDate", serial(m[jj][0]))
+        xl.Run("RunDay")
+        mk.Cells(mrow, 1).Value2, mk.Cells(mrow, 2).Value2, mk.Cells(mrow, 3).Value2 = serial(m[jj][0]), m[jj][1], m[jj][2]
+        mrow += 1
+    xl_orders: dict[str, dict[str, tuple[float, float]]] = {}
+    for r in read_sheet(od, 7):
+        xl_orders.setdefault(to_date(r[0]), {})[r[1]] = (float(r[2]), float(r[3]))
+    ref_tail = {d: v for d, v in ref_orders.items() if d >= m[j][0]}
+    for d in sorted(set(xl_orders) | set(ref_tail)):
+        a, b = xl_orders.get(d, {}), ref_tail.get(d, {})
+        if set(a) != set(b) or any(not (close(a[k][0], b[k][0]) and close(a[k][1], b[k][1])) for k in a):
+            fails.append(f"orders differ {d}: xl={a} ref={b}")
+            break
+    ref_by_key = {(t.inv, t.start, t.strat): t for t in tr_full if not t.closed}
+    xl_by_key = {}
+    for row in read_sheet(ss, 13):
+        if int(row[10]) == 0:
+            xl_by_key[(row[0], to_date(row[3]), row[2])] = row
+    if set(ref_by_key) != set(xl_by_key):
+        fails.append(f"open tranche sets differ: only_ref={set(ref_by_key) - set(xl_by_key)} only_xl={set(xl_by_key) - set(ref_by_key)}")
+    for key, t in ref_by_key.items():
+        row = xl_by_key.get(key)
+        if row and not (close(row[4], t.cash, 1e-4) and close(row[5], t.shares)):
+            fails.append(f"final state differs {key}: xl cash={row[4]} sh={row[5]} ref cash={t.cash} sh={t.shares}")
+    # 오류행 처리: 잘못된 전략/음수 보유수량은 ERR로 표시되고 등록되지 않는다
+    im.Cells(n_imp + 3, 1).Value2, im.Cells(n_imp + 3, 2).Value2, im.Cells(n_imp + 3, 3).Value2, im.Cells(n_imp + 3, 4).Value2, im.Cells(n_imp + 3, 5).Value2 = "Z1", "Q", serial(m[j][0]), 100, 1
+    im.Cells(n_imp + 4, 1).Value2, im.Cells(n_imp + 4, 2).Value2, im.Cells(n_imp + 4, 3).Value2, im.Cells(n_imp + 4, 4).Value2, im.Cells(n_imp + 4, 5).Value2 = "Z2", "H", serial(m[j][0]), 100, -5
+    n_before = len(read_sheet(ss, 13))
+    xl.Run("ImportExisting")
+    if len(read_sheet(ss, 13)) != n_before or [im.Cells(n_imp + 3, 10).Value2, im.Cells(n_imp + 4, 10).Value2] != ["ERR:strategy", "ERR:amount"]:
+        fails.append("import error rows not flagged")
+    wb.Close(False)
+    return fails
+
+
 def main() -> int:
     import win32com.client as wc
 
@@ -314,6 +396,11 @@ def main() -> int:
         ef = edge_tests(xl, m)
         ok_all &= not ef
         print("[edge] " + ("PASS" if not ef else "FAIL " + str(ef)))
+        for mode in ("FRAC", "INT"):
+            for jj in (45, 64, 100, 330):
+                f2 = import_test(xl, m, flows, mode, jj)
+                ok_all &= not f2
+                print(f"[import {mode} j={jj}] " + ("PASS" if not f2 else "FAIL " + str(f2[:4])))
     finally:
         xl.Quit()
     return 0 if ok_all else 1
