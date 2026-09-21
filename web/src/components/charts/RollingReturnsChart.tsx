@@ -14,7 +14,13 @@ import {
 import type { RollingSeriesPoint } from "@/lib/types";
 import { CATEGORICAL, CHART_SURFACE, GRIDLINE, INK_MUTED, INK_PRIMARY } from "@/lib/palette";
 
-const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; color: string; dash?: string }[] = [
+const SERIES: {
+  key: keyof Omit<RollingSeriesPoint, "date">;
+  label: string;
+  color: string;
+  dash?: string;
+  width?: number;
+}[] = [
   { key: "buyHold", label: "Buy & Hold", color: CATEGORICAL.orange },
   { key: "A", label: "후보 A", color: CATEGORICAL.blue },
   { key: "B", label: "후보 B", color: CATEGORICAL.aqua },
@@ -25,6 +31,7 @@ const SERIES: { key: keyof Omit<RollingSeriesPoint, "date">; label: string; colo
   { key: "G", label: "후보 G", color: CATEGORICAL.red },
   { key: "H", label: "후보 H (F/79/31)", color: INK_PRIMARY, dash: "6 3" },
   { key: "I", label: "후보 I (H+매도50%)", color: INK_PRIMARY, dash: "2 3" },
+  { key: "J", label: "후보 J (최종 추천)", color: INK_PRIMARY, width: 3 },
 ];
 
 function tickFormatter(dates: string[]) {
@@ -104,7 +111,7 @@ export function RollingReturnsChart({
               dataKey={s.key}
               name={s.key}
               stroke={s.color}
-              strokeWidth={1.75}
+              strokeWidth={s.width ?? 1.75}
               strokeDasharray={s.dash}
               legendType={s.dash ? "plainline" : undefined}
               dot={false}

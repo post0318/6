@@ -141,9 +141,17 @@ def simulate_with_trades(
     crash_level: float,
     crash_buy_fraction: float = 1.0,
     sell_fraction: float = 1.0,
+    risk_off: np.ndarray | None = None,
+    risk_off_cap: float = 0.0,
+    risk_off_retrim: bool = False,
 ):
     """simulate()와 완전히 동일한 로직이지만, 매매 신호(trades)와 비중/매수모드 배열도
-    함께 기록한다 — 대시보드의 "실전 매매 시그널" 표시용."""
+    함께 기록한다 — 대시보드의 "실전 매매 시그널" 표시용.
+
+    risk_off(추세 보험, session 22/26): True인 날엔 비중을 risk_off_cap까지 줄이고 매수를 멈추며,
+    False로 돌아오면 발동 직전 비중까지 즉시 되산다. None이면 simulate()와 동일.
+    기본은 발동 시 1회만 축소(risk_off_retrim=False); True면 비중이 cap을 넘을 때마다 재매도.
+    로직은 backtest/scenario_2022.simulate_overlay(retrim=...)와 같다."""
     n = len(fg)
     cash = INITIAL_CAPITAL
     shares = 0.0
@@ -155,6 +163,7 @@ def simulate_with_trades(
     weight = np.empty(n)
     buying_active_arr = np.empty(n, dtype=bool)
     trades: list[dict] = []
+    off, restore_w, cut_done = False, 0.0, False
 
     def record(i: int, action: str, pct: float | None = None) -> None:
         total_now = cash + shares * price[i]
@@ -172,6 +181,30 @@ def simulate_with_trades(
         f = fg[i]
         p = price[i]
         total = cash + shares * p
+
+        if risk_off is not None and i >= ramp_days:
+            cw = (shares * p) / total if total > 0 else 0.0
+            if risk_off[i]:
+                if not off:
+                    off, restore_w, cut_done = True, cw, False
+                if cw > risk_off_cap and (risk_off_retrim or not cut_done):
+                    sold_sh = (cw - risk_off_cap) * total / p
+                    shares -= sold_sh
+                    cash += sold_sh * p
+                    cut_done = True
+                    record(i, "TREND_CUT", cw - risk_off_cap)
+                equity[i] = cash + shares * p
+                weight[i] = (shares * p) / equity[i]
+                buying_active_arr[i] = buying_active
+                continue
+            if off:
+                off = False
+                if restore_w > cw:
+                    bv = min(cash, (restore_w - cw) * total)
+                    shares += bv / p
+                    cash -= bv
+                    record(i, "TREND_RESTORE", bv / total)
+                days_since = 0
 
         if i < ramp_days:
             bv = min(cash, ramp_daily * total)

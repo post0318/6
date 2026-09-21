@@ -37,7 +37,10 @@ const CANDIDATE_COLORS: Record<string, string> = {
   // 팔레트 8슬롯은 Buy&Hold+A~G가 다 써서, H는 새 색을 만들지 않고 검정 계열 점선(복합 인코딩)으로 구분
   H: INK_PRIMARY,
   I: INK_PRIMARY, // H의 변형이라 같은 검정 계열, 점선 모양(짧은 점)으로만 구분
+  J: INK_PRIMARY, // 최종 추천안: 같은 검정 계열 실선, 굵기로 구분
 };
+
+const STROKE_WIDTH: Record<string, number> = { J: 3 };
 
 const DASH: Record<string, string> = { H: "6 3", I: "2 3" };
 
@@ -47,6 +50,8 @@ const ACTION_KO: Record<SignalTrade["action"], string> = {
   CRASH_FULL_BUY: "급락 전량매수",
   SELL_ALL: "전량매도",
   SELL_HALF: "절반 매도",
+  TREND_CUT: "추세 보험 축소",
+  TREND_RESTORE: "추세 보험 복원",
   CRASH_HALF_BUY: "급락 절반매수",
 };
 
@@ -56,6 +61,8 @@ const ACTION_COLOR: Record<SignalTrade["action"], string> = {
   CRASH_FULL_BUY: CATEGORICAL.aqua,
   SELL_ALL: CATEGORICAL.orange,
   SELL_HALF: CATEGORICAL.orange,
+  TREND_CUT: CATEGORICAL.orange,
+  TREND_RESTORE: CATEGORICAL.blue,
   CRASH_HALF_BUY: CATEGORICAL.aqua,
 };
 
@@ -88,10 +95,11 @@ export function CandidatesEquityChart({
 
   return (
     <div className="rounded-lg border border-black/10 p-4" style={{ background: CHART_SURFACE }}>
-      <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">후보 A~I 자산가치 비교 (시작값 100 기준)</h4>
+      <h4 className="mb-1 text-sm font-medium text-[#0b0b0b]">후보 A~J 자산가치 비교 (시작값 100 기준)</h4>
       <p className="mb-3 text-xs text-[#898781]">
         A~G의 성과 차이는 매우 작습니다 — B/C/D/F(모두 40%/10% 계열)는 거의 겹쳐 보입니다.
-        점선 H는 트리거만 79/31로 바꾼 설정, 짧은 점선 I는 H에서 매도만 50%씩 하는 설정입니다.
+        점선 H는 트리거만 79/31로 바꾼 설정, 짧은 점선 I는 H에서 매도만 50%씩 하는 설정, 굵은 실선 J는
+        최종 추천안(매도 77에서 50% · 급락 30 · 175일선 추세 보험)입니다.
       </p>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
@@ -118,7 +126,7 @@ export function CandidatesEquityChart({
               dataKey={c.id}
               name={c.id}
               stroke={CANDIDATE_COLORS[c.id] ?? INK_PRIMARY}
-              strokeWidth={2}
+              strokeWidth={STROKE_WIDTH[c.id] ?? 2}
               strokeDasharray={DASH[c.id]}
               legendType={DASH[c.id] ? "plainline" : undefined}
               dot={false}
@@ -188,7 +196,7 @@ export function SignalOverlayCharts({
   const dates = timeseries.map((d) => d.date);
   const syncId = `signal-overlay-${candidateId}`;
 
-  const isSell = (a: SignalTrade["action"]) => a === "SELL_ALL" || a === "SELL_HALF";
+  const isSell = (a: SignalTrade["action"]) => a === "SELL_ALL" || a === "SELL_HALF" || a === "TREND_CUT";
   const buyByDate = new Map(trades.filter((t) => !isSell(t.action)).map((t) => [t.date, t]));
   const sellByDate = new Map(trades.filter((t) => isSell(t.action)).map((t) => [t.date, t]));
 
@@ -288,6 +296,9 @@ export function CandidatePanel({ candidate, timeseries }: { candidate: SignalCan
         {(params.buy_step * 100).toFixed(0)}%씩 {params.buy_interval_days}일마다 &middot; 재진입/매도{" "}
         {params.resell_level} &middot; 급락전량매수 {params.crash_level}
         {params.sell_fraction !== undefined && params.sell_fraction < 1 ? ` · 매도는 보유분의 ${params.sell_fraction * 100}%씩` : ""}
+        {params.trend_ma !== undefined && params.trend_buffer !== undefined && params.trend_cap !== undefined
+          ? ` · 추세 보험: 나스닥이 ${params.trend_ma}일선 -${params.trend_buffer * 100}% 아래면 비중 ${params.trend_cap * 100}%로 축소, ${params.trend_ma}일선 회복 시 복원`
+          : ""}
       </p>
 
       <div
@@ -356,7 +367,7 @@ export function CandidatePanel({ candidate, timeseries }: { candidate: SignalCan
                 </td>
                 <td className="px-3 py-1 text-[#0b0b0b]">{t.fg}</td>
                 <td className="px-3 py-1 text-[#0b0b0b]">{t.price.toLocaleString()}</td>
-                <td className="px-3 py-1 text-[#0b0b0b]">{t.action === "SELL_ALL" ? "전량" : t.pctOfPortfolio === null ? "-" : `${t.action === "SELL_HALF" ? "-" : "+"}${(t.pctOfPortfolio * 100).toFixed(0)}%p`}</td>
+                <td className="px-3 py-1 text-[#0b0b0b]">{t.action === "SELL_ALL" ? "전량" : t.pctOfPortfolio === null ? "-" : `${t.action === "SELL_HALF" || t.action === "TREND_CUT" ? "-" : "+"}${(t.pctOfPortfolio * 100).toFixed(0)}%p`}</td>
                 <td className="px-3 py-1 font-medium text-[#0b0b0b]">{(t.resultingWeight * 100).toFixed(0)}%</td>
               </tr>
             ))}
