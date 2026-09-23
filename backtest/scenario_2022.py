@@ -29,12 +29,13 @@ H = dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0
 
 def simulate_overlay(fg, price, risk_off, cap, initial_allocation, ramp_days, buy_interval_days, buy_step,
                      resell_level, crash_level, sell_fraction=1.0, crash_guard=None,
-                     crash_buy_fraction=1.0, crash_once=False, retrim=True):
+                     crash_buy_fraction=1.0, crash_once=False, retrim=True, restore=True):
     """optimize_v2.simulate와 동일한 로직 + risk_off 오버레이.
     crash_guard: True인 날에만 급락매수 허용(None이면 항상 허용).
     crash_buy_fraction: 급락매수 시 남은 현금 중 매수 비율. crash_once=True면 급락 국면(FG≥50에서 리셋)당 1회만.
     retrim: True면 risk_off 동안 가격 상승으로 비중이 cap을 넘을 때마다 다시 cap까지 매도(기존 결과),
-            False면 발동 시 1회만 축소(실전용, 대시보드 후보 J — 성과 차이 무시할 수준, session 26)."""
+            False면 발동 시 1회만 축소(실전용, 대시보드 후보 J — 성과 차이 무시할 수준, session 26).
+    restore: True면 해제 시 발동 직전 비중까지 즉시 복원, False면 복원 없이 정기매수·급락매수로만 채움(session 29)."""
     n = len(fg)
     cash, shares = INITIAL_CAPITAL, 0.0
     buying_active = sold_flag = off = False
@@ -60,7 +61,7 @@ def simulate_overlay(fg, price, risk_off, cap, initial_allocation, ramp_days, bu
             continue
         if off:  # 해제: 진입 직전 비중까지 복원
             off = False
-            if restore_w > cw:
+            if restore and restore_w > cw:
                 bv = min(cash, (restore_w - cw) * total)
                 shares += bv / p
                 cash -= bv
