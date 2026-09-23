@@ -406,6 +406,86 @@ def build_signal_candidates() -> list[dict]:
     return out
 
 
+KOSPI_H = dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=79, crash_level=31)
+KOSPI_I = {**KOSPI_H, "sell_fraction": 0.5}
+KOSPI_J = dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=77, crash_level=30,
+               sell_fraction=0.5, trend_ma=175, trend_buffer=0.03, trend_cap=0.25)
+# session 28: 코스피200 전용 재탐색 결과 — J의 나스닥 트리거(175일/3%버퍼/25%cap)는 코스피에서
+# 역효과라, 60일선·버퍼 없음·완전 이탈(cap 0%)로 다시 찾은 값. K-FG x 코스피에서는 어떤 값도
+# 두 표본에서 버티지 못해 이 후보는 코스피200(KODEX200)에만 넣는다.
+KOSPI200_K = dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=77, crash_level=30,
+                  sell_fraction=0.5, trend_ma=60, trend_buffer=0.0, trend_cap=0.0)
+
+KOSPI_CANDIDATES = [
+    {"id": "H", "label": "H: F/79/31 (나스닥 파라미터 그대로)", "params": KOSPI_H},
+    {"id": "I", "label": "I: H에서 매도만 50%", "params": KOSPI_I},
+    {"id": "J", "label": "J: 나스닥 최종추천(175일선 추세보험, 나스닥용 파라미터 그대로)", "params": KOSPI_J},
+]
+KOSPI200_CANDIDATES = KOSPI_CANDIDATES + [
+    {"id": "K", "label": "K: 코스피200 전용 추세보험(60일선·버퍼0%·cap0%)", "params": KOSPI200_K},
+]
+
+
+def _build_kospi_candidates(fg: np.ndarray, price: np.ndarray, dates: pd.Series, candidates: list[dict]) -> list[dict]:
+    from explore_kr import sim_kwargs_local  # noqa: E402  (지연 임포트 — 순환참조 방지)
+
+    out = []
+    for cand in candidates:
+        eq, *_ = simulate_with_trades(fg, price, dates, **sim_kwargs_local(cand["params"], price, dates))
+        out.append({
+            "id": cand["id"],
+            "label": cand["label"],
+            "params": {k: v for k, v in cand["params"].items()},
+            "summary": {k: clean(v) for k, v in perf_from_equity(eq, dates).items()},
+            "equityCurve": [{"date": str(dates.iloc[i].date()), "equity": clean(eq[i])} for i in range(len(fg))],
+        })
+    return out
+
+
+def build_kospi_section() -> dict:
+    """코스피 검증(실험) 섹션 — 나스닥 대시보드와 분리해서 보여준다 (session 28).
+    두 실험 모두 "최근 5년" 표본만 신는다(나스닥 섹션의 기본 표본 기준과 통일);
+    전체 표본·트리거 재탐색 상세는 notes/session28_kospi_analysis.md 참고."""
+    from explore_kr import load_kr_arrays  # noqa: E402
+    from explore_cnn_kospi200 import load_samples as load_cnn_kospi200_samples  # noqa: E402
+
+    experiments = []
+
+    _, _, _, df_full = load_kr_arrays()
+    cutoff = df_full["date"].iloc[-1] - pd.DateOffset(years=5)
+    df = df_full[df_full["date"] >= cutoff].reset_index(drop=True)
+    fg, price, dates = df["fg"].shift(1).bfill().to_numpy(), df["kospi"].to_numpy(), df["date"]
+    bench = 100.0 * (price / price[0])
+    experiments.append({
+        "id": "kfg_kospi",
+        "label": "K공포지수(국내 자체 지수) x 코스피 종합지수",
+        "dateRange": {"start": str(dates.iloc[0].date()), "end": str(dates.iloc[-1].date())},
+        "caveat": "K공포지수 히스토리가 6.2년뿐이라(2020-07~) 나스닥 같은 15년 교차검증 표본이 없음. "
+                  "당일 상관계수도 0.247로 CNN-나스닥(0.56)보다 약함 — 트리거를 코스피 전용으로 다시 찾아도 "
+                  "두 표본(최근5년/전체)에서 일관되게 Buy&Hold를 이기는 조합을 찾지 못함(잠정 결론).",
+        "buyHoldEquityCurve": [{"date": str(dates.iloc[i].date()), "equity": clean(bench[i])} for i in range(len(fg))],
+        "candidates": _build_kospi_candidates(fg, price, dates, KOSPI_CANDIDATES),
+    })
+
+    samp = load_cnn_kospi200_samples()
+    df = samp["최근5년"]
+    fg, price, dates = df["fg"].shift(1).bfill().to_numpy(), df["close"].to_numpy(), df["date"]
+    bench = 100.0 * (price / price[0])
+    experiments.append({
+        "id": "cnn_kospi200",
+        "label": "CNN 공포탐욕지수(원본) x 코스피200(KODEX 200 ETF, 069500.KS)",
+        "dateRange": {"start": str(dates.iloc[0].date()), "end": str(dates.iloc[-1].date())},
+        "caveat": "신호는 CNN 원본 그대로, 매매 대상만 나스닥에서 코스피200으로 교체. 후보 K(60일선·"
+                  "버퍼0%·완전이탈)는 최근5년·전체(2011~) 표본 모두에서 Sharpe와 최대낙폭 기준으로 "
+                  "Buy&Hold를 이김(교차검증 통과) — 절대수익률은 표본에 따라 못 미칠 수 있음. "
+                  "코스피200 지수 자체(^KS200)는 데이터가 없어 이를 추종하는 KODEX 200 ETF로 대신함.",
+        "buyHoldEquityCurve": [{"date": str(dates.iloc[i].date()), "equity": clean(bench[i])} for i in range(len(fg))],
+        "candidates": _build_kospi_candidates(fg, price, dates, KOSPI200_CANDIDATES),
+    })
+
+    return {"experiments": experiments}
+
+
 def build_rolling_series() -> dict:
     """롤링 1년/2년 수익률의 전체 시계열(요약 통계가 아니라 매일 값)을 반환한다 —
     대시보드에서 시간에 따른 롤링 성과 변화를 차트로 보여주기 위함."""
@@ -467,6 +547,7 @@ def main() -> None:
         "windowAnalysis": build_window_analysis(),
         "signalCandidates": build_signal_candidates(),
         "rollingSeries": build_rolling_series(),
+        "kospi": build_kospi_section(),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

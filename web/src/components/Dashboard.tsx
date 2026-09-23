@@ -10,6 +10,7 @@ import { GradualStrategyChart } from "@/components/charts/GradualStrategyChart";
 import { WindowEquityChart, WindowSummaryTable } from "@/components/charts/WindowAnalysisChart";
 import { CandidatesEquityChart, CandidatePanel } from "@/components/charts/SignalCandidates";
 import { RollingReturnsChart } from "@/components/charts/RollingReturnsChart";
+import { KospiSection } from "@/components/charts/KospiSection";
 
 const REPO_URL = "https://github.com/post0318/6";
 
@@ -152,6 +153,22 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <CandidatePanel key={c.id} candidate={c} timeseries={data.timeseries} />
           ))}
         </div>
+      </section>
+
+      <section className="mb-12">
+        <div className="mb-4 rounded-lg border border-[#2a78d6]/30 bg-[#2a78d6]/5 p-3 text-xs text-[#52514e]">
+          <span className="font-medium text-[#0b0b0b]">🇰🇷 여기부터는 나스닥이 아니라 코스피입니다. </span>
+          위 A~J 후보는 모두 나스닥·CNN 공포탐욕지수 기준이고, 아래는 신호와 매매 대상을 각각
+          한국으로 바꿔본 별도 실험입니다 — 구조는 같아도 시장이 다르므로 결과를 섞어서 보지
+          마세요.
+        </div>
+        <h2 className="mb-1 text-lg font-semibold text-[#0b0b0b]">코스피 검증(실험)</h2>
+        <p className="mb-3 text-xs text-[#898781]">
+          두 갈래로 나눠 확인합니다 — (1) 국내 자체 K공포지수(KRX 데이터 기반) × 코스피
+          종합지수, (2) CNN 공포탐욕지수(원본, 미국) × 코스피200(KODEX 200 ETF). 각 실험의
+          한계와 표본은 카드 안 설명 참고.
+        </p>
+        <KospiSection experiments={data.kospi.experiments} />
       </section>
 
       <footer className="border-t border-black/10 pt-6 text-xs text-[#898781]">

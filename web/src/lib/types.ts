@@ -207,6 +207,28 @@ export interface DashboardData {
     "1y": RollingSeriesPoint[];
     "2y": RollingSeriesPoint[];
   };
+  kospi: KospiSection;
+}
+
+export interface KospiCandidate {
+  id: string;
+  label: string;
+  params: SignalCandidate["params"];
+  summary: BacktestPerfStats;
+  equityCurve: { date: string; equity: number }[];
+}
+
+export interface KospiExperiment {
+  id: string;
+  label: string;
+  dateRange: { start: string; end: string };
+  caveat: string;
+  buyHoldEquityCurve: { date: string; equity: number }[];
+  candidates: KospiCandidate[];
+}
+
+export interface KospiSection {
+  experiments: KospiExperiment[];
 }
 
 export interface RollingSeriesPoint {
