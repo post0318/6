@@ -294,7 +294,40 @@ SIGNAL_CANDIDATES = [
         "label": "I: H에서 매도만 50%씩 (FG 79 재돌파마다 보유분의 절반)",
         "params": dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=79, crash_level=31, sell_fraction=0.5),
     },
+    {
+        "id": "J",
+        "label": "J: 최종 추천 (매도 77에서 50% · 급락 30 전량매수 · 175일선 추세 보험 25%)",
+        "params": dict(initial_allocation=0.40, ramp_days=10, buy_interval_days=21, buy_step=0.10, resell_level=77, crash_level=30,
+                       sell_fraction=0.5, trend_ma=175, trend_buffer=0.03, trend_cap=0.25),
+    },
 ]
+
+TREND_KEYS = ("trend_ma", "trend_buffer", "trend_cap")
+
+
+def trend_state(dates: pd.Series, ma: int, buffer: float) -> pd.DataFrame:
+    """추세 보험 신호(session 22/26): 나스닥 종가 < MA×(1-buffer)이면 발동, 종가 > MA이면 해제.
+    MA는 전체 나스닥 이력으로 계산해 표본 시작부터 유효하게 하고, 체결은 전일 신호 기준(1일 지연)."""
+    idx = pd.read_csv(ROOT / "data" / "nasdaq.csv", parse_dates=["date"]).sort_values("date").set_index("date")["close"]
+    m = idx.rolling(ma).mean()
+    on, off = (idx < m * (1 - buffer)).to_numpy(), (idx > m).to_numpy()
+    state, out = False, []
+    for a, b in zip(on, off):
+        state = (not b) if state else bool(a)
+        out.append(state)
+    df = pd.DataFrame({"active": out, "close": idx, "ma": m}, index=idx.index)
+    df["signal"] = df["active"].shift(1, fill_value=False)
+    return df.reindex(pd.DatetimeIndex(dates))
+
+
+def sim_kwargs(params: dict, dates: pd.Series) -> dict:
+    """후보 params(JSON용 스칼라)를 시뮬레이터 인자로 변환 — trend_* 키를 risk_off 배열로 바꾼다."""
+    kw = {k: v for k, v in params.items() if k not in TREND_KEYS}
+    if "trend_ma" in params:
+        st = trend_state(dates, params["trend_ma"], params["trend_buffer"])
+        kw["risk_off"] = st["signal"].fillna(False).to_numpy(dtype=bool)
+        kw["risk_off_cap"] = params["trend_cap"]
+    return kw
 
 
 def rolling_summary(equity: np.ndarray, bench_equity: np.ndarray, n: int) -> dict:
@@ -310,7 +343,8 @@ def rolling_summary(equity: np.ndarray, bench_equity: np.ndarray, n: int) -> dic
     }
 
 
-def current_status(weight: float, buying_active: bool, trades: list[dict], params: dict) -> dict:
+def current_status(weight: float, buying_active: bool, trades: list[dict], params: dict,
+                   trend: dict | None = None) -> dict:
     last_trade = trades[-1] if trades else None
     sf = params.get("sell_fraction", 1.0)
     sell_word = "전량매도" if sf >= 1.0 else f"보유분의 {sf*100:.0f}% 매도(FG가 기준을 다시 넘을 때마다 반복)"
@@ -325,6 +359,14 @@ def current_status(weight: float, buying_active: bool, trades: list[dict], param
         hint = f"{weight*100:.0f}% 보유 중(부분 매도 후) — FG가 {params['resell_level']} 밑으로 내려가면 매수 재개"
     else:
         hint = f"현금 보유 중 — FG가 {params['resell_level']} 밑으로 내려가면 매수 재개"
+    if trend is not None:
+        ma, trig = params["trend_ma"], trend["ma"] * (1 - params["trend_buffer"])
+        if trend["active"]:
+            hint = (f"추세 보험 발동 중 — 나스닥({trend['close']:,.0f})이 {ma}일선({trend['ma']:,.0f}) 아래라 비중 "
+                    f"{params['trend_cap']*100:.0f}%로 축소·매수 중단, {ma}일선 위로 회복하면 직전 비중으로 복원")
+        else:
+            hint += (f" · 추세 보험 대기: 나스닥({trend['close']:,.0f})이 {trig:,.0f}"
+                     f"({ma}일선 {trend['ma']:,.0f}의 -{params['trend_buffer']*100:.0f}%) 아래로 내려가면 비중 {params['trend_cap']*100:.0f}%로 축소")
     return {
         "currentWeight": clean(weight),
         "buyingActive": bool(buying_active),
@@ -339,13 +381,17 @@ def build_signal_candidates() -> list[dict]:
 
     out = []
     for cand in SIGNAL_CANDIDATES:
-        eq, weight, active, trades = simulate_with_trades(fg, price, dates, **cand["params"])
+        eq, weight, active, trades = simulate_with_trades(fg, price, dates, **sim_kwargs(cand["params"], dates))
         stats = perf_from_equity(eq, dates)
+        trend = None
+        if "trend_ma" in cand["params"]:
+            last = trend_state(dates, cand["params"]["trend_ma"], cand["params"]["trend_buffer"]).iloc[-1]
+            trend = {"active": bool(last["active"]), "close": float(last["close"]), "ma": float(last["ma"])}
         out.append({
             "id": cand["id"],
             "label": cand["label"],
             "params": cand["params"],
-            "currentStatus": current_status(float(weight[-1]), bool(active[-1]), trades, cand["params"]),
+            "currentStatus": current_status(float(weight[-1]), bool(active[-1]), trades, cand["params"], trend),
             "summary": {
                 "original": {k: clean(v) for k, v in stats.items()},
                 "rolling1y": rolling_summary(eq, bench_eq, 252),
@@ -368,7 +414,7 @@ def build_rolling_series() -> dict:
 
     curves = {"buyHold": bench_eq}
     for cand in SIGNAL_CANDIDATES:
-        curves[cand["id"]] = simulate_opt(fg, price, **cand["params"])
+        curves[cand["id"]] = simulate_with_trades(fg, price, dates, **sim_kwargs(cand["params"], dates))[0]
 
     def rolling(eq: np.ndarray, n: int) -> np.ndarray:
         return eq[n:] / eq[:-n] - 1

@@ -132,7 +132,15 @@ export interface WindowAnalysisData {
 
 export interface SignalTrade {
   date: string;
-  action: "RAMP_BUY" | "WEEKLY_BUY" | "CRASH_FULL_BUY" | "SELL_ALL" | "SELL_HALF" | "CRASH_HALF_BUY";
+  action:
+    | "RAMP_BUY"
+    | "WEEKLY_BUY"
+    | "CRASH_FULL_BUY"
+    | "SELL_ALL"
+    | "SELL_HALF"
+    | "CRASH_HALF_BUY"
+    | "TREND_CUT"
+    | "TREND_RESTORE";
   fg: number;
   price: number;
   pctOfPortfolio: number | null;
@@ -159,6 +167,9 @@ export interface SignalCandidate {
     resell_level: number;
     crash_level: number;
     sell_fraction?: number;
+    trend_ma?: number;
+    trend_buffer?: number;
+    trend_cap?: number;
   };
   currentStatus: {
     currentWeight: number;
@@ -210,4 +221,5 @@ export interface RollingSeriesPoint {
   G: number;
   H: number;
   I: number;
+  J: number;
 }
