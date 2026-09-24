@@ -11,7 +11,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,33 +18,14 @@ sys.path.insert(0, str(ROOT / "backtest"))
 sys.path.insert(0, str(ROOT / "analysis"))
 from explore import _load_fg_combined  # noqa: E402
 from optimize_v2 import INITIAL_CAPITAL, perf_from_equity, simulate_with_trades  # noqa: E402
-from export_dashboard_json import SIGNAL_CANDIDATES as _NASDAQ_CANDIDATES, TREND_KEYS  # noqa: E402
+from export_dashboard_json import SIGNAL_CANDIDATES as _NASDAQ_CANDIDATES  # noqa: E402
+from explore_kr import sim_kwargs_local  # noqa: E402
 
 KOSPI200_PATH = ROOT / "data" / "kospi200.csv"
 
 # 나스닥용 export_dashboard_json.SIGNAL_CANDIDATES(A~J)를 그대로 가져온다.
-# J의 175일선 추세 보험은 나스닥이 아니라 코스피200(매매 대상) 자신의 종가로 재계산.
+# J의 175일선 추세 보험은 나스닥이 아니라 코스피200(매매 대상) 자신의 종가로 재계산(explore_kr 공용 함수).
 SIGNAL_CANDIDATES = [(c["id"], c["params"]) for c in _NASDAQ_CANDIDATES]
-
-
-def trend_state_on(price: np.ndarray, dates: pd.Series, ma: int, buffer: float) -> np.ndarray:
-    s = pd.Series(price, index=pd.DatetimeIndex(dates))
-    m = s.rolling(ma).mean()
-    on, off = (s < m * (1 - buffer)).to_numpy(), (s > m).to_numpy()
-    state, out = False, []
-    for a, b in zip(on, off):
-        state = (not b) if state else bool(a)
-        out.append(state)
-    signal = pd.Series(out, index=s.index).shift(1, fill_value=False)
-    return signal.to_numpy(dtype=bool)
-
-
-def sim_kwargs_local(params: dict, price: np.ndarray, dates: pd.Series) -> dict:
-    kw = {k: v for k, v in params.items() if k not in TREND_KEYS}
-    if "trend_ma" in params:
-        kw["risk_off"] = trend_state_on(price, dates, params["trend_ma"], params["trend_buffer"])
-        kw["risk_off_cap"] = params["trend_cap"]
-    return kw
 
 
 def load_samples() -> dict[str, pd.DataFrame]:

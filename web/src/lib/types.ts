@@ -214,8 +214,16 @@ export interface KospiCandidate {
   id: string;
   label: string;
   params: SignalCandidate["params"];
+  currentStatus: SignalCandidate["currentStatus"];
   summary: BacktestPerfStats;
+  trades: SignalTrade[];
   equityCurve: { date: string; equity: number }[];
+}
+
+export interface KospiTimeseriesPoint {
+  date: string;
+  fg: number | null;
+  price: number | null;
 }
 
 export interface KospiExperiment {
@@ -224,6 +232,7 @@ export interface KospiExperiment {
   dateRange: { start: string; end: string };
   caveat: string;
   buyHoldEquityCurve: { date: string; equity: number }[];
+  timeseries: KospiTimeseriesPoint[];
   candidates: KospiCandidate[];
 }
 

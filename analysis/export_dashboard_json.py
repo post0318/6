@@ -344,7 +344,7 @@ def rolling_summary(equity: np.ndarray, bench_equity: np.ndarray, n: int) -> dic
 
 
 def current_status(weight: float, buying_active: bool, trades: list[dict], params: dict,
-                   trend: dict | None = None) -> dict:
+                   trend: dict | None = None, market_label: str = "나스닥") -> dict:
     last_trade = trades[-1] if trades else None
     sf = params.get("sell_fraction", 1.0)
     sell_word = "전량매도" if sf >= 1.0 else f"보유분의 {sf*100:.0f}% 매도(FG가 기준을 다시 넘을 때마다 반복)"
@@ -362,10 +362,10 @@ def current_status(weight: float, buying_active: bool, trades: list[dict], param
     if trend is not None:
         ma, trig = params["trend_ma"], trend["ma"] * (1 - params["trend_buffer"])
         if trend["active"]:
-            hint = (f"추세 보험 발동 중 — 나스닥({trend['close']:,.0f})이 {ma}일선({trend['ma']:,.0f}) 아래라 비중 "
+            hint = (f"추세 보험 발동 중 — {market_label}({trend['close']:,.0f})이 {ma}일선({trend['ma']:,.0f}) 아래라 비중 "
                     f"{params['trend_cap']*100:.0f}%로 축소·매수 중단, {ma}일선 위로 회복하면 직전 비중으로 복원")
         else:
-            hint += (f" · 추세 보험 대기: 나스닥({trend['close']:,.0f})이 {trig:,.0f}"
+            hint += (f" · 추세 보험 대기: {market_label}({trend['close']:,.0f})이 {trig:,.0f}"
                      f"({ma}일선 {trend['ma']:,.0f}의 -{params['trend_buffer']*100:.0f}%) 아래로 내려가면 비중 {params['trend_cap']*100:.0f}%로 축소")
     return {
         "currentWeight": clean(weight),
@@ -426,17 +426,25 @@ KOSPI200_CANDIDATES = KOSPI_CANDIDATES + [
 ]
 
 
-def _build_kospi_candidates(fg: np.ndarray, price: np.ndarray, dates: pd.Series, candidates: list[dict]) -> list[dict]:
-    from explore_kr import sim_kwargs_local  # noqa: E402  (지연 임포트 — 순환참조 방지)
+def _build_kospi_candidates(fg: np.ndarray, price: np.ndarray, dates: pd.Series, candidates: list[dict],
+                             market_label: str) -> list[dict]:
+    from explore_kr import sim_kwargs_local, trend_state_df_on  # noqa: E402  (지연 임포트 — 순환참조 방지)
 
     out = []
     for cand in candidates:
-        eq, *_ = simulate_with_trades(fg, price, dates, **sim_kwargs_local(cand["params"], price, dates))
+        params = cand["params"]
+        eq, weight, active, trades = simulate_with_trades(fg, price, dates, **sim_kwargs_local(params, price, dates))
+        trend = None
+        if "trend_ma" in params:
+            last = trend_state_df_on(price, dates, params["trend_ma"], params["trend_buffer"]).iloc[-1]
+            trend = {"active": bool(last["active"]), "close": float(last["close"]), "ma": float(last["ma"])}
         out.append({
             "id": cand["id"],
             "label": cand["label"],
-            "params": {k: v for k, v in cand["params"].items()},
+            "params": {k: v for k, v in params.items()},
+            "currentStatus": current_status(float(weight[-1]), bool(active[-1]), trades, params, trend, market_label),
             "summary": {k: clean(v) for k, v in perf_from_equity(eq, dates).items()},
+            "trades": trades,
             "equityCurve": [{"date": str(dates.iloc[i].date()), "equity": clean(eq[i])} for i in range(len(fg))],
         })
     return out
@@ -464,7 +472,8 @@ def build_kospi_section() -> dict:
                   "당일 상관계수도 0.247로 CNN-나스닥(0.56)보다 약함 — 트리거를 코스피 전용으로 다시 찾아도 "
                   "두 표본(최근5년/전체)에서 일관되게 Buy&Hold를 이기는 조합을 찾지 못함(잠정 결론).",
         "buyHoldEquityCurve": [{"date": str(dates.iloc[i].date()), "equity": clean(bench[i])} for i in range(len(fg))],
-        "candidates": _build_kospi_candidates(fg, price, dates, KOSPI_CANDIDATES),
+        "timeseries": [{"date": str(dates.iloc[i].date()), "fg": clean(df["fg"].iloc[i]), "price": clean(price[i])} for i in range(len(fg))],
+        "candidates": _build_kospi_candidates(fg, price, dates, KOSPI_CANDIDATES, "코스피"),
     })
 
     samp = load_cnn_kospi200_samples()
@@ -480,7 +489,8 @@ def build_kospi_section() -> dict:
                   "Buy&Hold를 이김(교차검증 통과) — 절대수익률은 표본에 따라 못 미칠 수 있음. "
                   "코스피200 지수 자체(^KS200)는 데이터가 없어 이를 추종하는 KODEX 200 ETF로 대신함.",
         "buyHoldEquityCurve": [{"date": str(dates.iloc[i].date()), "equity": clean(bench[i])} for i in range(len(fg))],
-        "candidates": _build_kospi_candidates(fg, price, dates, KOSPI200_CANDIDATES),
+        "timeseries": [{"date": str(dates.iloc[i].date()), "fg": clean(df["fg"].iloc[i]), "price": clean(price[i])} for i in range(len(fg))],
+        "candidates": _build_kospi_candidates(fg, price, dates, KOSPI200_CANDIDATES, "코스피200"),
     })
 
     return {"experiments": experiments}

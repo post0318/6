@@ -31,8 +31,10 @@ KR_JSON = ROOT / "data" / "kr_fg_full.json"
 SIGNAL_CANDIDATES = [(c["id"], c["params"]) for c in _NASDAQ_CANDIDATES]
 
 
-def trend_state_on(price: np.ndarray, dates: pd.Series, ma: int, buffer: float) -> np.ndarray:
-    """candidate J의 추세 보험을 나스닥이 아니라 실제 매매 대상(코스피/코스피200) 종가 기준으로 재계산."""
+def trend_state_df_on(price: np.ndarray, dates: pd.Series, ma: int, buffer: float) -> pd.DataFrame:
+    """추세 보험 히스테리시스 상태(active/close/ma) — 나스닥 export_dashboard_json.trend_state()와
+    같은 모양이지만 실제 매매 대상(코스피/코스피200) 종가로 계산한다. 지연 없는 원본 상태이며,
+    시뮬레이션에 쓸 신호는 trend_state_on()에서 하루 지연시킨다."""
     s = pd.Series(price, index=pd.DatetimeIndex(dates))
     m = s.rolling(ma).mean()
     on, off = (s < m * (1 - buffer)).to_numpy(), (s > m).to_numpy()
@@ -40,8 +42,13 @@ def trend_state_on(price: np.ndarray, dates: pd.Series, ma: int, buffer: float) 
     for a, b in zip(on, off):
         state = (not b) if state else bool(a)
         out.append(state)
-    signal = pd.Series(out, index=s.index).shift(1, fill_value=False)
-    return signal.to_numpy(dtype=bool)
+    return pd.DataFrame({"active": out, "close": s, "ma": m}, index=s.index)
+
+
+def trend_state_on(price: np.ndarray, dates: pd.Series, ma: int, buffer: float) -> np.ndarray:
+    """candidate J의 추세 보험을 나스닥이 아니라 실제 매매 대상(코스피/코스피200) 종가 기준으로 재계산."""
+    df = trend_state_df_on(price, dates, ma, buffer)
+    return df["active"].shift(1, fill_value=False).to_numpy(dtype=bool)
 
 
 def sim_kwargs_local(params: dict, price: np.ndarray, dates: pd.Series) -> dict:
